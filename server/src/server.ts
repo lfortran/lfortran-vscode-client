@@ -63,6 +63,7 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			documentSymbolProvider: true,
+			definitionProvider: true,
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -107,6 +108,7 @@ let globalSettings: ExampleSettings = defaultSettings;
 const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
 
 connection.onDocumentSymbol(async (request) => {
+	connection.console.log("onDocumentSymbol");
 	const document = documents.get(request.textDocument.uri);
 	const settings = await getDocumentSettings(request.textDocument.uri);
 	const text = document?.getText();
@@ -133,6 +135,48 @@ connection.onDocumentSymbol(async (request) => {
 	}
 	// console.log(symbols);
 	return symbols;
+});
+
+connection.onDefinition(async (request) => {
+	console.time('onDefinition');
+	const document = documents.get(request.textDocument.uri);
+	const settings = await getDocumentSettings(request.textDocument.uri);
+	const text = document?.getText();
+	const symbols: SymbolInformation[] = [];
+	if (typeof text == "string") {
+		// console.log("request: ");
+		// console.log(request);
+		const line = request.position.line + 1;
+		const column = request.position.character + 1;
+
+		console.log("line: " + line);
+		console.log("column: " + column);
+
+		const stdout = await runCompiler(text, "--lookup-name" + " --line=" + line + " --column=" + column, settings);
+		// console.log("got: ", stdout);
+		const obj = JSON.parse(stdout);
+		for (let i = 0; i < obj.length; i++) {
+			if (obj[i].location) {
+				return [{
+					targetUri: request.textDocument.uri,
+					targetRange: {
+						start: { line: obj[i].location.range.start.line, character: obj[i].location.range.start.character },
+						end: { line: obj[i].location.range.end.line, character: obj[i].location.range.end.character }
+					},
+					targetSelectionRange: {
+						start: { line: obj[i].location.range.start.line, character: obj[i].location.range.start.character },
+						end: { line: obj[i].location.range.end.line, character: obj[i].location.range.end.character }
+					},
+					originSelectionRange: {
+						start: { line: request.position.line, character: Math.max(0, request.position.character - 4) },
+						end: { line: request.position.line, character: request.position.character + 4 }
+					}
+				}];
+			}
+		}
+		console.timeEnd('onDefinition');
+		return undefined;
+	}
 });
 
 connection.onDidChangeConfiguration(change => {
