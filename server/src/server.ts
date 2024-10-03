@@ -160,15 +160,15 @@ connection.onDefinition(async (request) => {
 				return [{
 					targetUri: request.textDocument.uri,
 					targetRange: {
-						start: { line: obj[i].location.range.start.line, character: obj[i].location.range.start.character },
+						start: { line: obj[i].location.range.start.line, character: Math.max(0, obj[i].location.range.start.character - 1) },
 						end: { line: obj[i].location.range.end.line, character: obj[i].location.range.end.character }
 					},
 					targetSelectionRange: {
-						start: { line: obj[i].location.range.start.line, character: obj[i].location.range.start.character },
+						start: { line: obj[i].location.range.start.line, character: Math.max(0, obj[i].location.range.start.character - 1) },
 						end: { line: obj[i].location.range.end.line, character: obj[i].location.range.end.character }
 					},
 					originSelectionRange: {
-						start: { line: request.position.line, character: Math.max(0, request.position.character - 4) },
+						start: { line: request.position.line, character: Math.max(0, request.position.character) },
 						end: { line: request.position.line, character: request.position.character + 4 }
 					}
 				}];
