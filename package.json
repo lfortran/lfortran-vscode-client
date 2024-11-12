@@ -17,20 +17,22 @@
     "vscode": "^1.63.0"
   },
   "activationEvents": [
-    "*"
+    "onLanguage:fortran"
   ],
   "main": "./out/client/src/extension.js",
   "contributes": {
     "languages": [
       {
-        "id": "LFortran",
+        "id": "fortran",
         "aliases": [
-          "lfortran",
-          "fortran"
+          "lfortran"
         ],
         "extensions": [
           ".f",
-          ".f90"
+          ".for",
+          ".f90",
+          ".f95",
+          ".f03"
         ]
       }
     ],
@@ -55,10 +57,10 @@
           "default": "off",
           "description": "Traces the communication between VS Code and the language server."
         },
-        "LFortranLanguageServer.compiler.executablePath": {
+        "LFortranLanguageServer.compiler.lfortranPath": {
           "scope": "resource",
           "type": "string",
-          "default": "/home/dylon/Workspace/lcompilers/lfortran/src/bin/lfortran",
+          "default": "lfortran",
           "description": "The path to the LFortran compiler executable."
         }
       }
