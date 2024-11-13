@@ -27,7 +27,9 @@ export function activate(context: ExtensionContext) {
   );
 
   // The debug options for the server
-  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
+  // -----------------------------------------------------------------------
+  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can
+  //                 attach to the server for debugging
   const debugOptions = {
     execArgv: [
       '--nolazy',
@@ -35,8 +37,8 @@ export function activate(context: ExtensionContext) {
     ]
   };
 
-  // If the extension is launched in debug mode then the debug server options are used
-  // Otherwise the run options are used
+  // If the extension is launched in debug mode then the debug server options
+  // are used. Otherwise, the run options are used.
   const serverOptions: ServerOptions = {
     run: {
       module: serverModule,
@@ -57,7 +59,8 @@ export function activate(context: ExtensionContext) {
       language: 'fortran'
     }],
     synchronize: {
-      // Notify the server about file changes to '.clientrc files contained in the workspace
+      // Notify the server about file changes to '.clientrc files contained in
+      // the workspace
       fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
     }
   };

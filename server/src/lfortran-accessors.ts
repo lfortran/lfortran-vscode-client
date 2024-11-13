@@ -1,5 +1,4 @@
 import {
-  Definition,
   DefinitionLink
 } from 'vscode-languageserver-protocol';
 
@@ -190,18 +189,25 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   async showErrors(uri: string,
                    text: string,
                    settings: ExampleSettings): Promise<Diagnostic[]> {
-    const flags = ["--show-errors"];
-    const stdout = await this.runCompiler(settings, flags, text);
-    const results: ErrorDiagnostics = JSON.parse(stdout);
     const diagnostics: Diagnostic[] = [];
-    if (results?.diagnostics) {
-      for (let i = 0, k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems); i < k; i++) {
-        const diagnostic: Diagnostic = results.diagnostics[i];
-        diagnostic.severity = DiagnosticSeverity.Warning;
-        diagnostic.source = "lfortran-lsp";
-        diagnostics.push(diagnostic);
+    try {
+      const flags = ["--show-errors"];
+      const stdout = await this.runCompiler(settings, flags, text);
+      const results: ErrorDiagnostics = JSON.parse(stdout);
+      if (results?.diagnostics) {
+        let k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems);
+        for (let i = 0; i < k; i++) {
+          const diagnostic: Diagnostic = results.diagnostics[i];
+          diagnostic.severity = DiagnosticSeverity.Warning;
+          diagnostic.source = "lfortran-lsp";
+          diagnostics.push(diagnostic);
+        }
       }
+    } catch (error: any) {
+      console.error("Failed to show errors");
+      console.error(error);
+    } finally {
+      return diagnostics;
     }
-    return diagnostics;
   }
 }

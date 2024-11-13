@@ -8,12 +8,16 @@
 !/client/package.json
 !/client/src/*.ts
 !/client/testFixture/*.txt
+!/client/test/spec/**/*.ts
 !/client/tsconfig.json
 !/.gitignore
+!/.mocharc.json
 !/package.json
 !/README.md
 !/scripts/*.sh
 !/server/package.json
 !/server/src/*.ts
+!/server/test/bin/lfortran
+!/server/test/spec/**/*.ts
 !/server/tsconfig.json
 !/tsconfig.json
