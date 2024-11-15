@@ -60,3 +60,7 @@ This will generate a .vsix file in your `lfortran-lsp` folder, which can then be
 imported as an extension. You can go to extensions in VSCode, click on `...` on
 the top right, click on “Install from VSIX” and select the VSIX, and done (may
 require a reload). The extension has now been installed.
+
+## Testing
+
+To test the extension, please run `npm run test`.
