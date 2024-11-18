@@ -337,12 +337,15 @@ describe("PrefixTrie", () => {
           for (let term of terms) {
             let inserted: boolean = dict.insert(term);
             assert.equal(inserted, !visited.has(term));
-            visited.add(term);
+            visited.add(term.toLowerCase());
 
             let found: boolean = false;
             for (let candidate of dict.lookup(term)) {
-              assert.isTrue(candidate.startsWith(term));
-              found ||= (candidate === term);
+              let lowercaseCandidate = candidate.toLowerCase();
+              let lowercaseTerm = term.toLowerCase();
+              assert.isTrue(lowercaseCandidate.startsWith(lowercaseTerm),
+                            `Expected "${lowercaseCandidate}" to start with "${lowercaseTerm}"`);
+              found ||= (lowercaseCandidate === lowercaseTerm);
             }
             assert.isTrue(found);
           }
@@ -350,8 +353,9 @@ describe("PrefixTrie", () => {
           assert.equal(dict.size, visited.size);
 
           for (let term of dict) {
-            assert.include(visited, term);
-            visited.delete(term);
+            let lowercaseTerm = term.toLowerCase();
+            assert.include(visited, lowercaseTerm);
+            visited.delete(lowercaseTerm);
           }
           assert.isEmpty(visited);
         }

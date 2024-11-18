@@ -5,8 +5,11 @@ import {
 import {
   Diagnostic,
   DiagnosticSeverity,
+  Location,
+  Position,
+  Range,
   SymbolInformation,
-  SymbolKind
+  SymbolKind,
 } from 'vscode-languageserver/node';
 
 import {
@@ -146,8 +149,19 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     if (Array.isArray(results)) {
       const symbols: SymbolInformation[] = results;
       for (let i = 0, k = symbols.length; i < k; i++) {
-        let symbol = symbols[i];
-        symbol.location.uri = uri;
+        let symbol: SymbolInformation = symbols[i];
+
+        let location: Location = symbol.location;
+        location.uri = uri;
+
+        let range: Range = location.range;
+
+        let start: Position = range.start;
+        start.character--;
+
+        let end: Position = range.end;
+        end.character--;
+
         symbol.kind = SymbolKind.Function;
       }
       return symbols;
@@ -156,10 +170,10 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   }
 
   async lookupName(uri: string,
-                   text: string,
-                   line: number,
-                   column: number,
-                   settings: ExampleSettings): Promise<DefinitionLink[]> {
+    text: string,
+    line: number,
+    column: number,
+    settings: ExampleSettings): Promise<DefinitionLink[]> {
     try {
       const flags = [
         "--lookup-name",
@@ -171,7 +185,14 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       for (let i = 0, k = obj.length; i < k; i++) {
         let location = obj[i].location;
         if (location) {
-          let range = location.range;
+          let range: Range = location.range;
+
+          let start: Position = range.start;
+          start.character--;
+
+          let end: Position = range.end;
+          end.character--;
+
           return [{
             targetUri: uri,
             targetRange: range,

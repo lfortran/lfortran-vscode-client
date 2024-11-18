@@ -4,19 +4,28 @@
  * ------------------------------------------------------------------------------------------ */
 
 import {
+  CompletionItem,
+  CompletionItemKind,
+  CompletionList,
+  Position,
   _Connection,
   DefinitionLink,
   DefinitionParams,
   Diagnostic,
   DidChangeConfigurationNotification,
   DidChangeConfigurationParams,
-  // DidChangeWatchedFilesParams,
+  DidChangeWatchedFilesParams,
+  DidChangeTextDocumentParams,
   DocumentSymbolParams,
   InitializedParams,
   InitializeParams,
   InitializeResult,
+  Location,
+  Position,
+  Range,
   SymbolInformation,
   TextDocumentChangeEvent,
+  TextDocumentPositionParams,
   TextDocuments,
   TextDocumentSyncKind,
 } from 'vscode-languageserver/node';
@@ -26,6 +35,8 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ExampleSettings } from './lfortran-types';
 
 import { LFortranAccessor } from './lfortran-accessors';
+
+import { PrefixTrie } from './prefix-trie';
 
 // The global settings, used when the `workspace/configuration` request is not
 // supported by the client. Please note that this is not the case when using
@@ -51,6 +62,8 @@ export class LFortranLanguageServer {
 
   // Cache the settings of all open documents
   public documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
+
+  public dictionaries = new Map<string, PrefixTrie>();
 
   constructor(lfortran: LFortranAccessor,
               connection: _Connection,
@@ -78,9 +91,13 @@ export class LFortranLanguageServer {
 
     const result: InitializeResult = {
       capabilities: {
-        textDocumentSync: TextDocumentSyncKind.Incremental,
-        documentSymbolProvider: true,
+        completionProvider: {
+          resolveProvider: true,
+          triggerCharacters: ["0","1","2","3","4","5","6","7","8","9","_"],
+        },
         definitionProvider: true,
+        documentSymbolProvider: true,
+        textDocumentSync: TextDocumentSyncKind.Incremental,
       }
     };
 
@@ -109,13 +126,103 @@ export class LFortranLanguageServer {
     // }
   }
 
+  extractDefinition(location: Location): string | undefined {
+    let document = this.documents.get(location.uri);
+    if (document !== undefined) {
+      let range: Range = location.range;
+
+      let start: Position = range.start;
+      let startLine: number = start.line;
+      let startCol: number = start.character;
+
+      let end: Position = range.end;
+      let endLine: number = end.line;
+      let endCol: number = end.character;
+
+      let text = document.getText();
+
+      let currLine = 0;
+      let currCol = 0;
+
+      for (let i = 0, k = text.length; i < k; i++) {
+        let c: string;
+        if ((currLine === startLine) && (currCol === startCol)) {
+          let j = i;
+          for (; (currLine < endLine) || (currLine === endLine) && (currCol <= endCol); j++) {
+            c = text[j];
+            if (c === '\n') {
+              currLine++;
+              currCol = 0;
+            } else if (c === '\r') {
+              let l = j + 1;
+              if ((l < k) && (text[l] === '\n')) {
+                j = l;
+              }
+              currLine++;
+              currCol = 0;
+            } else {
+              currCol++;
+            }
+          }
+          let definition: string = text.substring(i, j);
+          return definition;
+        } else {
+          c = text[i];
+          if (c === '\n') {
+            currLine++;
+            currCol = 0;
+          } else if (c === '\r') {
+            let j = i + 1;
+            if ((j < k) && (text[j] === '\n')) {
+              i = j;
+            }
+            currLine++;
+            currCol = 0;
+          } else {
+            currCol++;
+          }
+        }
+      }
+    }
+  }
+
+  index(uri: string, symbols: SymbolInformation[]): void {
+    if (symbols.length > 0) {
+      // (symbols.length == 0) => error with document, but we still need to
+      // support auto-completion.
+      let terms: string[] = [];
+      let values: CompletionItem[] = [];
+      for (let i = 0, k = symbols.length; i < k; i++) {
+        let symbol: SymbolInformation = symbols[i];
+        let definition: string | undefined =
+          this.extractDefinition(symbol.location);
+        terms.push(symbol.name);
+        values.push({
+          label: symbol.name,
+          // FIXME: Once lfortran returns the correct symbol kinds, map them
+          // to their corresponding completion kind, here.
+          // ---------------------------------------------------------------
+          // kind: symbol.kind,
+          kind: CompletionItemKind.Text,
+          detail: definition,
+        });
+      }
+      // TODO: Index temporary file by URI (maybe)
+      let dictionary = PrefixTrie.from(terms, values);
+      this.dictionaries.set(uri, dictionary);
+    }
+  }
+
   async onDocumentSymbol(request: DocumentSymbolParams): Promise<SymbolInformation[] | undefined> {
     const uri = request.textDocument.uri;
     const document = this.documents.get(uri);
     const settings = await this.getDocumentSettings(uri);
     const text = document?.getText();
     if (typeof text === "string") {
-      return await this.lfortran.showDocumentSymbols(uri, text, settings);
+      let symbols: SymbolInformation[] =
+        await this.lfortran.showDocumentSymbols(uri, text, settings);
+      this.index(uri, symbols);
+      return symbols;
     }
   }
 
@@ -189,4 +296,70 @@ export class LFortranLanguageServer {
   //   // Monitored files have change in VSCode
   //   this.connection.console.log('We received an file change event');
   // }
+
+  isIdentifiable(c: string): boolean {
+    // A character `c` may be part of an identifier if it is a member of the
+    // range `[a-zA-Z0-9_]`.
+    return (('0' <= c) && (c <= '9')) ||
+      (('A' <= c) && (c <= 'z')) ||
+      (c == '_');
+  }
+
+  extractQuery(text: string, line: number, column: number): string | null {
+    let isIdentifiable = this.isIdentifiable;
+    let currLine = 0;
+    let currCol = 0;
+
+    for (let i = 0, k = text.length; i < k; i++) {
+      let c: string = text[i];
+      if (c === '\n') {
+        currLine++;
+        currCol = 0;
+      } else if (c === '\r') {
+        let j = i + 1;
+        if ((j < k) && (text[j] === '\n')) {
+          i = j;
+        }
+        currLine++;
+        currCol = 0;
+      } else {
+        currCol++;
+      }
+
+      if ((line === currLine) && (column === currCol)) {
+        if (isIdentifiable(c)) {
+          let l = i;
+          let u = i + 1;
+          while ((l > 0) && isIdentifiable(text[l - 1])) {
+            l--;
+          }
+          while ((u < k) && isIdentifiable(text[u])) {
+            u++;
+          }
+          let query = text.substring(l, u);
+          return query;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async onCompletion(documentPosition: TextDocumentPositionParams): Promise<CompletionItem[] | CompletionList | undefined> {
+    let uri: string = documentPosition.textDocument.uri;
+    let document = this.documents.get(uri);
+    let dictionary = this.dictionaries.get(uri);
+    if ((document !== undefined) && (dictionary !== undefined)) {
+      let text: string = document.getText();
+      let pos: Position = documentPosition.position;
+      let query: string | null = this.extractQuery(text, pos.line, pos.character);
+      if (query !== null) {
+        return Array.from(dictionary.lookup(query)) as CompletionItem[];
+      }
+    }
+  }
+
+  onCompletionResolve(item: CompletionItem): CompletionItem {
+    return item;
+  }
 }

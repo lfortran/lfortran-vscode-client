@@ -4,7 +4,7 @@ export class PrefixNode {
 
   public parent?: PrefixNode;
   public label?: string;
-  public term?: string;
+  public value?: object | string;
 
   constructor(label?: string, parent?: PrefixNode) {
     this.parent = parent;
@@ -34,13 +34,13 @@ export class PrefixNode {
     return ss;
   }
 
-  collect(): string {
-    if (this.term === undefined) {
+  collect(): object | string {
+    if (this.value === undefined) {
       let ss: string[] = [];
       this.buffer(ss);
-      this.term = ss.join("");
+      this.value = ss.join("");
     }
-    return this.term;
+    return this.value;
   }
 
   toString(): string {
@@ -86,8 +86,9 @@ interface IteratorValue<T> {
 
 export class PrefixIterator {
   private pending: PrefixNode[] = [];
+  private visited: Set<number> = new Set();
   private ss: string[] = [];
-  private value: string | null = null;
+  private value: object | string | null = null;
   public done: boolean = false;
 
   constructor(node?: PrefixNode) {
@@ -97,7 +98,7 @@ export class PrefixIterator {
     }
   }
 
-  next(): IteratorValue<string | null> {
+  next(): IteratorValue<object | string | null> {
     this.advance();
     let value = this.value;
     this.value = null;
@@ -109,22 +110,23 @@ export class PrefixIterator {
 
   advance(): void {
     if ((this.value === null) && (this.pending.length > 0)) {
+      let pending: PrefixNode[] = this.pending;
       do {
         // @ts-ignore: next-line
-        let node: PrefixNode = this.pending.shift();
+        let node: PrefixNode = pending.shift();
         for (let child of node.edges.values()) {
-          this.pending.push(child);
+          pending.push(child);
         }
         if (node.isFinal) {
-          if (node.term === undefined) {
+          if (node.value === undefined) {
             this.ss.length = 0;
             node.buffer(this.ss);
-            node.term = this.ss.join("");
+            node.value = this.ss.join("");
           }
-          this.value = node.term;
+          this.value = node.value;
           break;
         }
-      } while (this.pending.length > 0);
+      } while (pending.length > 0);
     }
     this.done = (this.value === null);
   }
@@ -139,7 +141,7 @@ export class PrefixIterator {
     buffer.push("PrefixIterator{value=");
     if (this.value !== null) {
       buffer.push('"');
-      buffer.push(this.value);
+      buffer.push(this.value.toString());
       buffer.push('"');
     } else {
       buffer.push("null");
@@ -230,25 +232,44 @@ export class PrefixCursor {
 }
 
 export class PrefixTrie {
+  static noop: PrefixNode = new PrefixNode();
   public root: PrefixNode = new PrefixNode();
   public size: number = 0;
 
-  insert(term: string): boolean {
+  public static from(terms: string[], values?: object[] | string[]): PrefixTrie {
+    if (values === undefined) {
+      values = terms;
+    }
+    let dict = new PrefixTrie();
+    for (let i = 0, k = terms.length; i < k; i++) {
+      let term: string = terms[i];
+      let value: object | string = values[i];
+      dict.insert(term, value);
+    }
+    return dict;
+  }
+
+  insert(term: string, value: object | string): boolean {
+    term = term.toLowerCase();
     let curr: PrefixNode = this.root;
+    let path: PrefixNode[] = [];
+    path.push(curr);
     for (let i = 0, k = term.length; i < k; i++) {
       let label: string = term[i];
       curr = curr.addEdge(label);
+      path.push(curr);
     }
     if (curr.isFinal) {
       return false;
     }
     curr.isFinal = true;
-    curr.term = term;
+    curr.value = value;
     this.size++;
     return true;
   }
 
   remove(term: string): boolean {
+    term = term.toLowerCase();
     let curr: PrefixNode | undefined = this.root;
     for (let i = 0, k = term.length;
          (i < k) && (curr !== undefined);
@@ -260,7 +281,7 @@ export class PrefixTrie {
       return false;
     }
     curr.isFinal = false;
-    curr.term = undefined;
+    curr.value = undefined;
     while ((curr.edges.size === 0) && !curr.isFinal) {
       let label: string | undefined = curr.label;
       curr = curr.parent;
@@ -273,7 +294,8 @@ export class PrefixTrie {
     return true;
   }
 
-  lookup(term: string): PrefixIterator | undefined {
+  lookup(term: string): PrefixIterator {
+    term = term.toLowerCase();
     let curr: PrefixNode | undefined = this.root;
     for (let i = 0, k = term.length; i < k; i++) {
       let label: string = term[i];
@@ -283,12 +305,13 @@ export class PrefixTrie {
       }
     }
     if (curr === undefined) {
-      return undefined;
+      return new PrefixIterator(PrefixTrie.noop);
     }
     return new PrefixIterator(curr);
   }
 
   contains(term: string): boolean {
+    term = term.toLowerCase();
     let curr: PrefixNode | undefined = this.root;
     for (let i = 0, k = term.length;
          (i < k) && (curr !== undefined);

@@ -95,7 +95,7 @@ describe("LFortranLanguageServer", () => {
     };
 
     it("Returns all the symbols", async () => {
-      let expected: SymbolInformation[] = [
+      let response: SymbolInformation[] = [
         {
           name: "baz",
           // NOTE: Right now, the kind is hard-coded to Function ...
@@ -134,8 +134,15 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      let stdout = JSON.stringify(expected);
+      let stdout = JSON.stringify(response);
       document.getText.returns(stdout);
+
+      let expected = response;
+      for (let symbol of expected) {
+        let range = symbol.location.range;
+        range.start.character--;
+        range.end.character--;
+      }
 
       let actual = await server.onDocumentSymbol(request);
       assert.deepEqual(actual, expected);
@@ -196,6 +203,9 @@ describe("LFortranLanguageServer", () => {
       ]);
 
       document.getText.returns(stdout);
+
+      range.start.character--;
+      range.end.character--;
 
       let actual = await server.onDefinition(request);
       assert.deepEqual(actual, expected);
