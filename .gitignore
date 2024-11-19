@@ -10,6 +10,8 @@
 !/client/testFixture/*.txt
 !/client/test/spec/**/*.ts
 !/client/tsconfig.json
+!/.github/workflows/*.yaml
+!/.github/workflows/*.yml
 !/.gitignore
 !/.mocharc.json
 !/package.json
