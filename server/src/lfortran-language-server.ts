@@ -304,7 +304,6 @@ export class LFortranLanguageServer {
   // }
 
   extractQuery(text: string, line: number, column: number): string | null {
-    let isIdentifiable = this.isIdentifiable;
     let currLine = 0;
     let currCol = 0;
 
