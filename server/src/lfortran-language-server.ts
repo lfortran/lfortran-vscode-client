@@ -49,6 +49,8 @@ const defaultSettings: ExampleSettings = {
   }
 };
 
+const RE_IDENTIFIABLE: RegExp = /^[a-zA-Z0-9_]$/;
+
 export class LFortranLanguageServer {
   public lfortran: LFortranAccessor;
   public connection: _Connection;
@@ -187,30 +189,28 @@ export class LFortranLanguageServer {
   }
 
   index(uri: string, symbols: SymbolInformation[]): void {
-    if (symbols.length > 0) {
-      // (symbols.length == 0) => error with document, but we still need to
-      // support auto-completion.
-      let terms: string[] = [];
-      let values: CompletionItem[] = [];
-      for (let i = 0, k = symbols.length; i < k; i++) {
-        let symbol: SymbolInformation = symbols[i];
-        let definition: string | undefined =
-          this.extractDefinition(symbol.location);
-        terms.push(symbol.name);
-        values.push({
-          label: symbol.name,
-          // FIXME: Once lfortran returns the correct symbol kinds, map them
-          // to their corresponding completion kind, here.
-          // ---------------------------------------------------------------
-          // kind: symbol.kind,
-          kind: CompletionItemKind.Text,
-          detail: definition,
-        });
-      }
-      // TODO: Index temporary file by URI (maybe)
-      let dictionary = PrefixTrie.from(terms, values);
-      this.dictionaries.set(uri, dictionary);
+    // (symbols.length == 0) => error with document, but we still need to
+    // support auto-completion.
+    let terms: string[] = [];
+    let values: CompletionItem[] = [];
+    for (let i = 0, k = symbols.length; i < k; i++) {
+      let symbol: SymbolInformation = symbols[i];
+      let definition: string | undefined =
+        this.extractDefinition(symbol.location);
+      terms.push(symbol.name);
+      values.push({
+        label: symbol.name,
+        // FIXME: Once lfortran returns the correct symbol kinds, map them
+        // to their corresponding completion kind, here.
+        // ---------------------------------------------------------------
+        // kind: symbol.kind,
+        kind: CompletionItemKind.Text,
+        detail: definition,
+      });
     }
+    // TODO: Index temporary file by URI (maybe)
+    let dictionary = PrefixTrie.from(terms, values);
+    this.dictionaries.set(uri, dictionary);
   }
 
   async onDocumentSymbol(request: DocumentSymbolParams): Promise<SymbolInformation[] | undefined> {
@@ -221,7 +221,11 @@ export class LFortranLanguageServer {
     if (typeof text === "string") {
       let symbols: SymbolInformation[] =
         await this.lfortran.showDocumentSymbols(uri, text, settings);
-      this.index(uri, symbols);
+      if (symbols.length > 0) {
+        // (symbols.length == 0) => error with document, but we still need to
+        // support auto-completion.
+        this.index(uri, symbols);
+      }
       return symbols;
     }
   }
@@ -297,14 +301,6 @@ export class LFortranLanguageServer {
   //   this.connection.console.log('We received an file change event');
   // }
 
-  isIdentifiable(c: string): boolean {
-    // A character `c` may be part of an identifier if it is a member of the
-    // range `[a-zA-Z0-9_]`.
-    return (('0' <= c) && (c <= '9')) ||
-      (('A' <= c) && (c <= 'z')) ||
-      (c == '_');
-  }
-
   extractQuery(text: string, line: number, column: number): string | null {
     let isIdentifiable = this.isIdentifiable;
     let currLine = 0;
@@ -327,13 +323,14 @@ export class LFortranLanguageServer {
       }
 
       if ((line === currLine) && (column === currCol)) {
-        if (isIdentifiable(c)) {
+        let re_identifiable: RegExp = RE_IDENTIFIABLE;
+        if (re_identifiable.test(c)) {
           let l = i;
           let u = i + 1;
-          while ((l > 0) && isIdentifiable(text[l - 1])) {
+          while ((l > 0) && re_identifiable.test(text[l - 1])) {
             l--;
           }
-          while ((u < k) && isIdentifiable(text[u])) {
+          while ((u < k) && re_identifiable.test(text[u])) {
             u++;
           }
           let query = text.substring(l, u);

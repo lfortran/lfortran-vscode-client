@@ -1,4 +1,7 @@
 import {
+  CompletionItem,
+  CompletionItemKind,
+  CompletionList,
   _Connection,
   DefinitionLink,
   DefinitionParams,
@@ -7,11 +10,14 @@ import {
   DidChangeConfigurationParams,
   DocumentSymbolParams,
   InitializeParams,
+  Location,
+  Position,
   Range,
   RemoteWorkspace,
   SymbolInformation,
   SymbolKind,
   TextDocumentChangeEvent,
+  TextDocumentPositionParams,
   TextDocuments,
 } from "vscode-languageserver/node";
 
@@ -308,6 +314,293 @@ describe("LFortranLanguageServer", () => {
       await server.validateTextDocument(document);
       let sendDiagnostics = connection.sendDiagnostics;
       assert.isTrue(sendDiagnostics.calledOnceWith({uri: uri, diagnostics }));
+    });
+  });
+
+  describe("extractDefinition", () => {
+    it("extracts definitions from the respective range", () => {
+      let text: string = [
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit,",
+        "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris",
+        "nisi ut aliquip ex ea commodo consequat.",
+        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum",
+        "dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat",
+        "non proident, sunt in culpa qui officia deserunt mollit anim id est",
+        "laborum."
+      ].join("\n");
+
+      document.getText.returns(text);
+
+      let start: Position = {
+        line: 0,
+        character: 0,
+      };
+
+      let end: Position = {
+        line: 0,
+        character: 10,
+      };
+
+      let range: Range = { start, end };
+      let location: Location = { uri, range };
+
+      let definition: string = server.extractDefinition(location);
+      assert.equal(definition, "Lorem ipsum");
+
+      start.line = 2;
+      start.character = 8;
+      end.line = 5;
+      end.character = 31;
+      definition = server.extractDefinition(location);
+      assert.equal(definition, [
+        "ad minim veniam, quis nostrud exercitation ullamco laboris",
+        "nisi ut aliquip ex ea commodo consequat.",
+        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum",
+        "dolore eu fugiat nulla pariatur."
+      ].join("\n"));
+    });
+  });
+
+  describe("index", () => {
+    it("indexes empty lists of symbols", () => {
+      let symbols: SymbolInformation[] = [];
+      server.index(uri, symbols);
+      let dictionary = server.dictionaries.get(uri);
+      assert.isDefined(dictionary);
+      let indexed: CompletionItem[] =
+        Array.from(dictionary) as CompletionItem[];
+      assert.isEmpty(indexed);
+    });
+
+    it("indexes singleton lists of symbols", () => {
+      let text: string = "def foo; def bar; def baz; def qux; def quo;";
+      document.getText.returns(text);
+
+      let symbols: SymbolInformation[] = [
+        {
+          name: "foo",
+          kind: SymbolInformation.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 0,
+              },
+              end: {
+                line: 0,
+                character: 7,
+              },
+            },
+          },
+        },
+      ];
+
+      server.index(uri, symbols);
+      let dictionary = server.dictionaries.get(uri);
+      assert.isDefined(dictionary);
+      let indexed: CompletionItem[] =
+        Array.from(dictionary) as CompletionItem[];
+      assert.deepEqual(indexed, [
+        {
+          label: "foo",
+          kind: CompletionItemKind.Text,
+          detail: "def foo;"
+        },
+      ]);
+    });
+
+    it("indexes lists of symbols", () => {
+      let text: string = "def foo; def bar; def baz; def qux; def quo;";
+      document.getText.returns(text);
+
+      let symbols: SymbolInformation[] = [
+        {
+          name: "foo",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 0,
+              },
+              end: {
+                line: 0,
+                character: 7,
+              },
+            },
+          },
+        },
+        {
+          name: "bar",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 9,
+              },
+              end: {
+                line: 0,
+                character: 16,
+              },
+            },
+          },
+        },
+        {
+          name: "baz",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 18,
+              },
+              end: {
+                line: 0,
+                character: 25,
+              },
+            },
+          },
+        },
+      ];
+
+      server.index(uri, symbols);
+      let dictionary = server.dictionaries.get(uri);
+      assert.isDefined(dictionary);
+      let indexed: CompletionItem[] =
+        Array.from(dictionary) as CompletionItem[];
+      assert.deepEqual(indexed, [
+        {
+          label: "foo",
+          kind: CompletionItemKind.Text,
+          detail: "def foo;"
+        },
+        {
+          label: "bar",
+          kind: CompletionItemKind.Text,
+          detail: "def bar;"
+        },
+        {
+          label: "baz",
+          kind: CompletionItemKind.Text,
+          detail: "def baz;"
+        },
+      ]);
+    });
+  });
+
+  describe("extractQuery", () => {
+    it("expands identifiable symbols at the given location", () => {
+      let text: string = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
+      let query: string = server.extractQuery(text, 0, 1);
+      assert.equal(query, "Lorem");
+
+      query = server.extractQuery(text, 0, 6);  // actual text, ".", is not identifiable.
+      assert.isNull(query);
+
+      query = server.extractQuery(text, 0, 25);
+      assert.equal(query, "amet");
+    });
+  });
+
+  describe("onCompletion", () => {
+    it("completes queries based on indexed terms", async () => {
+      let text: string = "def foo; def bar; def baz; def qux; def quo; ba";
+      document.getText.returns(text);
+
+      let symbols: SymbolInformation[] = [
+        {
+          name: "foo",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 0,
+              },
+              end: {
+                line: 0,
+                character: 7,
+              },
+            },
+          },
+        },
+        {
+          name: "bar",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 9,
+              },
+              end: {
+                line: 0,
+                character: 16,
+              },
+            },
+          },
+        },
+        {
+          name: "baz",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 18,
+              },
+              end: {
+                line: 0,
+                character: 25,
+              },
+            },
+          },
+        },
+      ];
+
+      server.index(uri, symbols);
+
+      let documentPosition: TextDocumentPositionParams = {
+        textDocument: {
+          uri: uri,
+        },
+        position: {
+          line: 0,
+          character: 47,
+        },
+      };
+
+      let actual: CompletionItem[] | CompletionList =
+        await server.onCompletion(documentPosition);
+
+      if (!Array.isArray(actual)) {
+        actual = (actual as CompletionList).items;
+      }
+
+      let expected: CompletionItem[] = [
+        {
+          label: "bar",
+          kind: CompletionItemKind.Text,
+          detail: "def bar;"
+        },
+        {
+          label: "baz",
+          kind: CompletionItemKind.Text,
+          detail: "def baz;"
+        },
+      ];
+
+      assert.deepEqual(actual, expected);
     });
   });
 });

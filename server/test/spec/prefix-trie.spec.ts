@@ -335,9 +335,10 @@ describe("PrefixTrie", () => {
           let dict = new PrefixTrie();
           let visited = new Set<string>();
           for (let term of terms) {
+            let lowercaseTerm = term.toLowerCase();
             let inserted: boolean = dict.insert(term);
-            assert.equal(inserted, !visited.has(term));
-            visited.add(term.toLowerCase());
+            assert.equal(inserted, !visited.has(lowercaseTerm));
+            visited.add(lowercaseTerm);
 
             let found: boolean = false;
             for (let candidate of dict.lookup(term)) {
@@ -376,7 +377,7 @@ describe("PrefixTrie", () => {
         fc.array(fc.string()),
         (terms: string[]) => {
           let dict = new PrefixTrie();
-          let visited = new Set<string>(terms);
+          let visited = new Set<string>(terms.map(term => term.toLowerCase()));
           for (let term of terms) {
             dict.insert(term);
           }
@@ -385,13 +386,14 @@ describe("PrefixTrie", () => {
           shuffle(terms);
 
           for (let term of terms) {
-            if (visited.has(term)) {
-              assert.isTrue(dict.contains(term));
-              assert.isTrue(dict.remove(term));
-              visited.delete(term);
+            let lowercaseTerm = term.toLowerCase();
+            if (visited.has(lowercaseTerm)) {
+              assert.isTrue(dict.contains(lowercaseTerm));
+              assert.isTrue(dict.remove(lowercaseTerm));
+              visited.delete(lowercaseTerm);
             } else {
-              assert.isFalse(dict.contains(term));
-              assert.isFalse(dict.remove(term));
+              assert.isFalse(dict.contains(lowercaseTerm));
+              assert.isFalse(dict.remove(lowercaseTerm));
             }
           }
           assert.equal(dict.size, visited.size);

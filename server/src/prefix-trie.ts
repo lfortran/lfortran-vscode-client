@@ -249,7 +249,10 @@ export class PrefixTrie {
     return dict;
   }
 
-  insert(term: string, value: object | string): boolean {
+  insert(term: string, value?: object | string): boolean {
+    if (value === undefined) {
+      value = term;
+    }
     term = term.toLowerCase();
     let curr: PrefixNode = this.root;
     let path: PrefixNode[] = [];
