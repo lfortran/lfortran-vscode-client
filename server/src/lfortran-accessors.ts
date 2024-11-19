@@ -99,6 +99,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     let stdout: string = "{}";
 
     try {
+      console.debug("Writing JSON to [%s]: %s", this.tmpFile.name, text);
       fs.writeFileSync(this.tmpFile.name, text);
 
       let lfortranPath = settings.compiler.lfortranPath;
@@ -119,6 +120,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         } else {
           stdout = response.stdout.toString();
         }
+        console.debug("Read JSON from [%s]: %s", this.tmpFile.name, stdout);
       } catch (compileError: any) {
         stdout = compileError.stdout;
         if (compileError.signal !== null) {
@@ -134,8 +136,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   }
 
   async showDocumentSymbols(uri: string,
-                            text: string,
-                            settings: ExampleSettings): Promise<SymbolInformation[]> {
+    text: string,
+    settings: ExampleSettings): Promise<SymbolInformation[]> {
     const flags = ["--show-document-symbols"];
     const stdout = await this.runCompiler(settings, flags, text);
     let results;
