@@ -402,4 +402,34 @@ describe("PrefixTrie", () => {
       )
     );
   });
+
+  it("can match terms exactly", () => {
+    fc.assert(
+      fc.property(
+        fc.gen(),
+        fc.uniqueArray(fc.string()),
+        fc.string(),
+        (gen, terms: string[], randomQuery: string) => {
+          let dict: PrefixTrie = PrefixTrie.from(terms);
+
+          if (terms.length > 0) {
+            let exactIndex: number = gen(fc.nat, { max: terms.length - 1 });
+            let exactQuery: string = terms[exactIndex];
+            let exactMatch: string = dict.exactLookup(exactQuery) as string;
+            assert.isDefined(exactMatch);
+            assert.equal(exactQuery.toLowerCase(), exactMatch.toLowerCase());
+          }
+
+          if (dict.contains(randomQuery)) {
+            let exactMatch: string | undefined = dict.exactLookup(randomQuery) as string;
+            assert.isDefined(exactMatch);
+            assert.equal(randomQuery.toLowerCase(), exactMatch.toLowerCase());
+          } else {
+            let exactMatch: string | undefined = dict.exactLookup(randomQuery) as string;
+            assert.isUndefined(exactMatch);
+          }
+        }
+      )
+    );
+  });
 });

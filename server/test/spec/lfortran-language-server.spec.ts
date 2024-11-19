@@ -9,8 +9,11 @@ import {
   DiagnosticSeverity,
   DidChangeConfigurationParams,
   DocumentSymbolParams,
+  Hover,
+  HoverParams,
   InitializeParams,
   Location,
+  MarkedString,
   Position,
   Range,
   RemoteWorkspace,
@@ -510,7 +513,7 @@ describe("LFortranLanguageServer", () => {
   });
 
   describe("onCompletion", () => {
-    it("completes queries based on indexed terms", async () => {
+    it("completes queries based on indexed terms", () => {
       let text: string = "def foo; def bar; def baz; def qux; def quo; ba";
       document.getText.returns(text);
 
@@ -581,7 +584,7 @@ describe("LFortranLanguageServer", () => {
       };
 
       let actual: CompletionItem[] | CompletionList =
-        await server.onCompletion(documentPosition);
+        server.onCompletion(documentPosition);
 
       if (!Array.isArray(actual)) {
         actual = (actual as CompletionList).items;
@@ -601,6 +604,84 @@ describe("LFortranLanguageServer", () => {
       ];
 
       assert.deepEqual(actual, expected);
+    });
+  });
+
+  describe("onHover", () => {
+    it("displays a symbol's definition", async () => {
+      let text: string = "def foo; def bar; def baz; def qux; def quo; ba";
+      document.getText.returns(text);
+
+      let symbols: SymbolInformation[] = [
+        {
+          name: "foo",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 0,
+              },
+              end: {
+                line: 0,
+                character: 7,
+              },
+            },
+          },
+        },
+        {
+          name: "bar",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 9,
+              },
+              end: {
+                line: 0,
+                character: 16,
+              },
+            },
+          },
+        },
+        {
+          name: "baz",
+          kind: SymbolKind.Function,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 18,
+              },
+              end: {
+                line: 0,
+                character: 25,
+              },
+            },
+          },
+        },
+      ];
+
+      server.index(uri, symbols);
+
+      let hoverParams: HoverParams = {
+        textDocument: {
+          uri: uri,
+        },
+        position: {
+          line: 0,
+          character: 5,
+        }
+      };
+
+      let response: Hover = server.onHover(hoverParams);
+      let contents: MarkedString = response.contents as MarkedString;
+      assert.equal(contents.language, "fortran");
+      assert.equal(contents.value, "def foo;");
     });
   });
 });

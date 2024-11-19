@@ -33,6 +33,7 @@ connection.onDidChangeConfiguration(server.onDidChangeConfiguration.bind(server)
 // connection.onDidChangeWatchedFiles(server.onDidChangeWatchedFiles.bind(server));
 connection.onCompletion(server.onCompletion.bind(server));
 connection.onCompletionResolve(server.onCompletionResolve.bind(server));
+connection.onHover(server.onHover.bind(server));
 
 documents.onDidClose(server.onDidClose.bind(server));
 documents.onDidChangeContent(server.onDidChangeContent.bind(server));
