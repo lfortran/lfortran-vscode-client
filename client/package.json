@@ -1,22 +1,22 @@
 {
-	"name": "lfortran-lsp-client",
-	"description": "LFortran LSP client.",
-	"author": "LCompilers",
-	"license": "MIT",
-	"version": "1.0.0",
+  "name": "lfortran-lsp-client",
+  "description": "LFortran LSP client.",
+  "author": "LCompilers",
+  "license": "MIT",
+  "version": "1.0.0",
   "publisher": "LCompilers",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/dylon/lfortran-lsp"
-	},
-	"engines": {
-		"vscode": "^1.63.0"
-	},
-	"dependencies": {
-		"vscode-languageclient": "^7.0.0"
-	},
-	"devDependencies": {
-		"@types/vscode": "^1.63.0",
-		"@vscode/test-electron": "^2.1.2"
-	}
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dylon/lfortran-lsp"
+  },
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.63.0",
+    "@vscode/test-electron": "^2.1.2"
+  }
 }

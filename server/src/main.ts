@@ -31,6 +31,8 @@ connection.onDocumentSymbol(server.onDocumentSymbol.bind(server));
 connection.onDefinition(server.onDefinition.bind(server));
 connection.onDidChangeConfiguration(server.onDidChangeConfiguration.bind(server));
 // connection.onDidChangeWatchedFiles(server.onDidChangeWatchedFiles.bind(server));
+connection.onCompletion(server.onCompletion.bind(server));
+connection.onCompletionResolve(server.onCompletionResolve.bind(server));
 
 documents.onDidClose(server.onDidClose.bind(server));
 documents.onDidChangeContent(server.onDidChangeContent.bind(server));

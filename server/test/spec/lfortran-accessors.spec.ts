@@ -51,7 +51,7 @@ describe("LFortranCLIAccessor", () => {
     });
 
     it("returns the expected symbol information", async () => {
-      let expected: SymbolInformation[] = [
+      let response: SymbolInformation[] = [
         {
           name: "foo",
           // NOTE: Right now, the kind is hard-coded to Function ...
@@ -89,7 +89,13 @@ describe("LFortranCLIAccessor", () => {
           }
         },
       ];
-      let stdout = JSON.stringify(expected);
+      let stdout = JSON.stringify(response);
+      let expected = response;
+      for (let symbol of expected) {
+        let range = symbol.location.range;
+        range.start.character--;
+        range.end.character--;
+      }
       let actual = await lfortran.showDocumentSymbols(uri, stdout, settings);
       assert.deepEqual(actual, expected);
     });
@@ -156,6 +162,9 @@ describe("LFortranCLIAccessor", () => {
           }
         }
       ]);
+
+      range.start.character--;
+      range.end.character--;
 
       let actual = await lfortran.lookupName(uri, stdout, line, column, settings);
       assert.deepEqual(actual, expected);
