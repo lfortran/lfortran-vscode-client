@@ -101,6 +101,13 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     try {
       console.debug("Writing JSON to [%s]: %s", this.tmpFile.name, text);
       fs.writeFileSync(this.tmpFile.name, text);
+      fs.access(this.tmpFile.name, fs.constants.W_OK, (err) => {
+        if (err) {
+          console.error('[%s] is not writable:', this.tmpFile.name, err);
+        } else {
+          console.log('[%s] is writable!', this.tmpFile.name);
+        }
+      });
 
       let lfortranPath = settings.compiler.lfortranPath;
       if (lfortranPath === "lfortran") {
