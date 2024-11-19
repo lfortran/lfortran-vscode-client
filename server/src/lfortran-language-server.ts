@@ -7,16 +7,17 @@ import {
   CompletionItem,
   CompletionItemKind,
   CompletionList,
-  Position,
   _Connection,
   DefinitionLink,
   DefinitionParams,
   Diagnostic,
   DidChangeConfigurationNotification,
   DidChangeConfigurationParams,
-  DidChangeWatchedFilesParams,
-  DidChangeTextDocumentParams,
+  // DidChangeTextDocumentParams,
+  // DidChangeWatchedFilesParams,
   DocumentSymbolParams,
+  Hover,
+  HoverParams,
   InitializedParams,
   InitializeParams,
   InitializeResult,
@@ -99,6 +100,7 @@ export class LFortranLanguageServer {
         },
         definitionProvider: true,
         documentSymbolProvider: true,
+        hoverProvider: true,
         textDocumentSync: TextDocumentSyncKind.Incremental,
       }
     };
@@ -302,7 +304,6 @@ export class LFortranLanguageServer {
   // }
 
   extractQuery(text: string, line: number, column: number): string | null {
-    let isIdentifiable = this.isIdentifiable;
     let currLine = 0;
     let currCol = 0;
 
@@ -342,7 +343,7 @@ export class LFortranLanguageServer {
     return null;
   }
 
-  async onCompletion(documentPosition: TextDocumentPositionParams): Promise<CompletionItem[] | CompletionList | undefined> {
+  onCompletion(documentPosition: TextDocumentPositionParams): CompletionItem[] | CompletionList | undefined {
     let uri: string = documentPosition.textDocument.uri;
     let document = this.documents.get(uri);
     let dictionary = this.dictionaries.get(uri);
@@ -358,5 +359,29 @@ export class LFortranLanguageServer {
 
   onCompletionResolve(item: CompletionItem): CompletionItem {
     return item;
+  }
+
+  onHover(params: HoverParams): Hover | undefined {
+    let uri: string = params.textDocument.uri;
+    let document = this.documents.get(uri);
+    let dictionary = this.dictionaries.get(uri);
+    if ((document !== undefined) && (dictionary !== undefined)) {
+      let text: string = document.getText();
+      let pos: Position = params.position;
+      let query: string | null = this.extractQuery(text, pos.line, pos.character);
+      if (query !== null) {
+        let completion: CompletionItem | undefined =
+          dictionary.exactLookup(query) as CompletionItem;
+        let definition: string | undefined = completion?.detail;
+        if (definition !== undefined) {
+          return {
+            contents: {
+              language: "fortran",
+              value: definition,
+            },
+          };
+        }
+      }
+    }
   }
 }

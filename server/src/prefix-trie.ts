@@ -297,6 +297,20 @@ export class PrefixTrie {
     return true;
   }
 
+  exactLookup(term: string): object | string | undefined {
+    term = term.toLowerCase();
+    let curr: PrefixNode | undefined = this.root;
+    for (let i = 0, k = term.length;
+         (i < k) && (curr !== undefined);
+         i++) {
+      let label: string = term[i];
+      curr = curr.transition(label);
+    }
+    if (curr !== undefined) {
+      return curr.value;
+    }
+  }
+
   lookup(term: string): PrefixIterator {
     term = term.toLowerCase();
     let curr: PrefixNode | undefined = this.root;
