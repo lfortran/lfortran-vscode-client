@@ -29,13 +29,13 @@ jobs:
 
       - name: VSCode Details
         id: output
-          run: |
-            echo "vscode-version-name = ${{ steps.vscode-versions.outputs.vscode-version-name }}"
-            echo "vscode-version = ${{ steps.vscode-versions.outputs.vscode-version }}"
-            echo "released-at = ${{ steps.vscode-versions.outputs.released-at }}"
-            echo "electron-version = ${{ steps.vscode-versions.outputs.electron-version }}"
-            echo "node-version = ${{ steps.vscode-versions.outputs.node-version }}"
-            echo "chromium-version = ${{ steps.vscode-versions.outputs.chromium-version }}"
+        run: |
+          echo "vscode-version-name = ${{ steps.vscode-versions.outputs.vscode-version-name }}"
+          echo "vscode-version = ${{ steps.vscode-versions.outputs.vscode-version }}"
+          echo "released-at = ${{ steps.vscode-versions.outputs.released-at }}"
+          echo "electron-version = ${{ steps.vscode-versions.outputs.electron-version }}"
+          echo "node-version = ${{ steps.vscode-versions.outputs.node-version }}"
+          echo "chromium-version = ${{ steps.vscode-versions.outputs.chromium-version }}"
 
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
