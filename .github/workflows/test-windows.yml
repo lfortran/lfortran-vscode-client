@@ -22,8 +22,9 @@ jobs:
     steps:
       - name: Install VSCode
         run: choco install vscode
+      - run: dir "C:\Program Files\Microsoft VS Code"
       - name: Append vscode to path
-        run: echo "C:\Program Files\Microsoft VS Code" >> $GITHUB_PATH
+        run: echo "C:\Program Files\Microsoft VS Code" >> "$GITHUB_PATH"
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -31,3 +32,4 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm install
       - run: npm test
+        shell: bash
