@@ -21,9 +21,9 @@ jobs:
 
     steps:
       - name: Install VSCode
-        uses: crazy-max/ghaction-chocolatey@v3
-        with:
-          args: install vscode
+        run: choco install vscode
+      - name: Append vscode to path
+        run: echo "C:\Program Files\Microsoft VS Code" >> $GITHUB_PATH
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
