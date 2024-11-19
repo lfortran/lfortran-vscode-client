@@ -24,13 +24,12 @@ jobs:
         run: choco install vscode
       - run: dir "C:\Program Files\Microsoft VS Code"
       - name: Append vscode to path
-        run: echo "C:\Program Files\Microsoft VS Code" >> "$GITHUB_PATH"
+        run: Add-Content $env:GITHUB_PATH "C:\Program Files\Microsoft VS Code"
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
-        shell: bash
       - run: npm test
         shell: bash
