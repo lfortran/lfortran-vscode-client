@@ -108,6 +108,13 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           console.log('[%s] is writable!', this.tmpFile.name);
         }
       });
+      fs.access(this.tmpFile.name, fs.constants.R_OK, (err) => {
+        if (err) {
+          console.error('[%s] is not readable or does not exist:', this.tmpFile.name, err);
+        } else {
+          console.log('[%s] is readable', this.tmpFile.name);
+        }
+      });
 
       let lfortranPath = settings.compiler.lfortranPath;
       if (lfortranPath === "lfortran") {
