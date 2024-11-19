@@ -20,23 +20,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Retrieve VSCode dependency versions
-        id: vscode-versions
-        uses: EcksDy/vscode-version-matrix@v1.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: ${{ matrix.vscode-version }}
-
-      - name: VSCode Details
-        id: output
-        run: |
-          echo "vscode-version-name = ${{ steps.vscode-versions.outputs.vscode-version-name }}"
-          echo "vscode-version = ${{ steps.vscode-versions.outputs.vscode-version }}"
-          echo "released-at = ${{ steps.vscode-versions.outputs.released-at }}"
-          echo "electron-version = ${{ steps.vscode-versions.outputs.electron-version }}"
-          echo "node-version = ${{ steps.vscode-versions.outputs.node-version }}"
-          echo "chromium-version = ${{ steps.vscode-versions.outputs.chromium-version }}"
-
+      - name: Install VSCode
+        run: sudo snap install code --classic
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
