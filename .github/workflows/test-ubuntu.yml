@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Retrieve VSCode dependency versions
         id: vscode-versions
-        uses: EcksDy/vscode-version-matrix
+        uses: EcksDy/vscode-version-matrix@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: ${{ matrix.vscode-version }}
