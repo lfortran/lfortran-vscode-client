@@ -34,14 +34,10 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
 cmake --build . -j8
 ```
 
-1. Clone https://github.com/dylon/lfortran-lsp
-2. Go to: `lfortran-lsp/src/server.ts` file and replace the binary path of LFortran in
-   line number 103 to your binary path.
-3. Go to: `lfortran-lsp/package.json` file and replace the binary path of LFortran in
-   line number 61 to your binary path.
-4. Build the extension:
+1. Clone https://github.com/lfortran/lfortran-lsp
+2. Build the extension:
 
-```bash
+```console
 cd lfortran-lsp && npm install && npm run compile
 ```
 
@@ -52,11 +48,11 @@ Development, and test the extension. :)
 To package the extension, you can do:
 
 ```bash
-npm install -g vsce
+sudo npm install -g vsce
 vsce package
 ```
 
-This will generate a .vsix file in your `lfortran-lsp` folder, which can then be
+This will generate a `.vsix` file in your `lfortran-lsp` folder, which can then be
 imported as an extension. You can go to extensions in VSCode, click on `...` on
 the top right, click on “Install from VSIX” and select the VSIX, and done (may
 require a reload). The extension has now been installed.
