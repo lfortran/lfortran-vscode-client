@@ -19,7 +19,8 @@
 !/scripts/*.sh
 !/server/package.json
 !/server/src/*.ts
-!/server/test/bin/lfortran
+!/server/test/bin/*.ps1
+!/server/test/bin/*.sh
 !/server/test/spec/**/*.ts
 !/server/tsconfig.json
 !/tsconfig.json
