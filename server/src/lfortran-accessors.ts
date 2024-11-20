@@ -115,9 +115,19 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         const response = spawnSync(lfortranPath, flags.concat([this.tmpFile.name]));
 
         if (response.error) {
-          stdout = response.stderr.toString();
+          if (response.stderr) {
+            stdout = response.stderr.toString();
+          } else {
+            console.error("Failed to get stderr from lfortran");
+            stdout = "";
+          }
         } else {
-          stdout = response.stdout.toString();
+          if (response.stdout) {
+            stdout = response.stdout.toString();
+          } else {
+            console.error("Failed to get stdout from lfortran");
+            stdout = "";
+          }
         }
       } catch (compileError: any) {
         stdout = compileError.stdout;
