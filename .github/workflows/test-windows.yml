@@ -25,6 +25,8 @@ jobs:
       #   run: choco install vscode
       # - name: Append vscode to path
       #   run: Add-Content $env:GITHUB_PATH "C:\Program Files\Microsoft VS Code"
+      - name: Check lfortran test script
+        run: ./server/test/bin/lfortran README.md
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
