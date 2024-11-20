@@ -100,7 +100,6 @@ export class LFortranCLIAccessor implements LFortranAccessor {
 
     try {
       fs.writeFileSync(this.tmpFile.name, text);
-      console.debug("Wrote to [%s]: %s", this.tmpFile.name, fs.readFileSync(this.tmpFile.name));
 
       let lfortranPath = settings.compiler.lfortranPath;
       if (lfortranPath === "lfortran") {
@@ -126,12 +125,6 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           encoding: 'utf-8',
           stdio: 'pipe'
         });
-        if (response.stderr) {
-          console.debug("stderr: %s", response.stderr.toString());
-        }
-        if (response.stdout) {
-          console.debug("stdout: %s", response.stdout.toString());
-        }
 
         if (response.error) {
           if (response.stderr) {

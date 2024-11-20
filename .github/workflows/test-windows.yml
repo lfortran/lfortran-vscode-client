@@ -31,6 +31,4 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
-      - run: |
-          Set-ExecutionPolicy Bypass -Scope CurrentUser
-          npm test
+      - run: npm test

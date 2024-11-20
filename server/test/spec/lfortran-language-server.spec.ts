@@ -145,6 +145,7 @@ describe("LFortranLanguageServer", () => {
 
       let stdout = JSON.stringify(response);
       document.getText.returns(stdout);
+      sinon.stub(lfortran, "runCompiler").resolves(stdout);
 
       let expected = response;
       for (let symbol of expected) {
@@ -212,6 +213,7 @@ describe("LFortranLanguageServer", () => {
       ]);
 
       document.getText.returns(stdout);
+      sinon.stub(lfortran, "runCompiler").resolves(stdout);
 
       range.start.character--;
       range.end.character--;
@@ -313,6 +315,7 @@ describe("LFortranLanguageServer", () => {
         diagnostics: diagnostics
       });
       document.getText.returns(stdout);
+      sinon.stub(lfortran, "runCompiler").resolves(stdout);
 
       await server.validateTextDocument(document);
       let sendDiagnostics = connection.sendDiagnostics;

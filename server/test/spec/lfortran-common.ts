@@ -10,6 +10,7 @@ const scriptName: string = ((os.platform() === "win32")
 export const settings: ExampleSettings = {
   maxNumberOfProblems: 100,
   compiler: {
-    lfortranPath: path.join(__dirname, "..", "bin", scriptName)
+    // lfortranPath: path.join(__dirname, "..", "bin", scriptName)
+    lfortranPath: "<error: please stub with sinon>",
   }
 };
