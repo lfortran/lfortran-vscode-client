@@ -48,7 +48,7 @@ Development, and test the extension. :)
 To package the extension, you can do:
 
 ```bash
-sudo npm install -g vsce
+npm install --save-dev vsce
 vsce package
 ```
 
