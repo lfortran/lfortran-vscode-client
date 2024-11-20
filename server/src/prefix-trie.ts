@@ -21,14 +21,13 @@ export class PrefixNode {
   }
 
   transition(label: string): PrefixNode | undefined {
-    let child: PrefixNode | undefined = this.edges.get(label);
-    return child;
+    return this.edges.get(label);
   }
 
   buffer(ss: string[]): string[] {
     if (this.parent !== undefined) {
       this.parent.buffer(ss);
-      // @ts-ignore: next-line
+      // @ts-expect-error: next-line
       ss.push(this.label);
     }
     return ss;
@@ -36,7 +35,7 @@ export class PrefixNode {
 
   collect(): object | string {
     if (this.value === undefined) {
-      let ss: string[] = [];
+      const ss: string[] = [];
       this.buffer(ss);
       this.value = ss.join("");
     }
@@ -44,7 +43,7 @@ export class PrefixNode {
   }
 
   toString(): string {
-    let ss: string[] = [];
+    const ss: string[] = [];
     ss.push("PrefixNode{isFinal=");
     ss.push(this.isFinal.toString());
     ss.push(",edges=");
@@ -55,6 +54,7 @@ export class PrefixNode {
     return ss.join("");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equalsPrefix(that: any): boolean {
     return (that instanceof PrefixNode) &&
       ((this.parent === undefined) === (that.parent === undefined)) &&
@@ -63,17 +63,19 @@ export class PrefixNode {
       (this.label === that.label);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equalsSuffix(that: any): boolean {
     return (that instanceof PrefixNode) &&
       (this.isFinal === that.isFinal) &&
       (this.label === that.label) &&
       (this.edges.size === that.edges.size) &&
       Array.from(this.edges).every(([label, thisChild]) => {
-        let thatChild = that.edges.get(label);
+        const thatChild = that.edges.get(label);
         return thisChild.equalsSuffix(thatChild);
       });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return this.equalsPrefix(that) && this.equalsSuffix(that);
   }
@@ -100,7 +102,7 @@ export class PrefixIterator {
 
   next(): IteratorValue<object | string | null> {
     this.advance();
-    let value = this.value;
+    const value = this.value;
     this.value = null;
     return {
       value: value,
@@ -110,11 +112,11 @@ export class PrefixIterator {
 
   advance(): void {
     if ((this.value === null) && (this.pending.length > 0)) {
-      let pending: PrefixNode[] = this.pending;
+      const pending: PrefixNode[] = this.pending;
       do {
-        // @ts-ignore: next-line
-        let node: PrefixNode = pending.shift();
-        for (let child of node.edges.values()) {
+        // @ts-expect-error: next-line
+        const node: PrefixNode = pending.shift();
+        for (const child of node.edges.values()) {
           pending.push(child);
         }
         if (node.isFinal) {
@@ -136,8 +138,8 @@ export class PrefixIterator {
   }
 
   toString(): string {
-    let buffer: string[] = [];
-    let pending: PrefixNode[] = this.pending;
+    const buffer: string[] = [];
+    const pending: PrefixNode[] = this.pending;
     buffer.push("PrefixIterator{value=");
     if (this.value !== null) {
       buffer.push('"');
@@ -150,7 +152,7 @@ export class PrefixIterator {
     buffer.push(pending.length.toString());
     buffer.push(",values=[");
     for (let i = 0, k = pending.length; i < k; i++) {
-      let node: PrefixNode = pending[i];
+      const node: PrefixNode = pending[i];
       buffer.push('"');
       buffer.push(node.toString());
       buffer.push('"');
@@ -162,12 +164,13 @@ export class PrefixIterator {
     return buffer.join("");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return (that instanceof PrefixIterator) &&
       (this.value === that.value) &&
       (this.pending.length === that.pending.length) &&
       this.pending.every((thisNode: PrefixNode, index: number) => {
-        let thatNode: PrefixNode = that.pending[index];
+        const thatNode: PrefixNode = that.pending[index];
         return thisNode.equals(thatNode);
       });
   }
@@ -188,7 +191,7 @@ export class PrefixCursor {
     for (let i = 0, k = suffix.length;
          (i < k) && (curr !== undefined);
          i++) {
-      let label: string = suffix[i];
+      const label: string = suffix[i];
       prev = curr;
       curr = curr.transition(label);
     }
@@ -215,11 +218,12 @@ export class PrefixCursor {
   }
 
   toString(): string {
-    let prev: string = (this.prev !== undefined) ? `"${this.prev}"` : "null";
-    let curr: string = (this.curr !== undefined) ? `"${this.curr}"` : "null";
+    const prev: string = (this.prev !== undefined) ? `"${this.prev}"` : "null";
+    const curr: string = (this.curr !== undefined) ? `"${this.curr}"` : "null";
     return `PrefixCursor{prev=${prev},curr=${curr}}`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return (that instanceof PrefixCursor) &&
       ((this.curr === undefined) === (that.curr === undefined)) &&
@@ -240,10 +244,10 @@ export class PrefixTrie {
     if (values === undefined) {
       values = terms;
     }
-    let dict = new PrefixTrie();
+    const dict = new PrefixTrie();
     for (let i = 0, k = terms.length; i < k; i++) {
-      let term: string = terms[i];
-      let value: object | string = values[i];
+      const term: string = terms[i];
+      const value: object | string = values[i];
       dict.insert(term, value);
     }
     return dict;
@@ -255,10 +259,10 @@ export class PrefixTrie {
     }
     term = term.toLowerCase();
     let curr: PrefixNode = this.root;
-    let path: PrefixNode[] = [];
+    const path: PrefixNode[] = [];
     path.push(curr);
     for (let i = 0, k = term.length; i < k; i++) {
-      let label: string = term[i];
+      const label: string = term[i];
       curr = curr.addEdge(label);
       path.push(curr);
     }
@@ -277,7 +281,7 @@ export class PrefixTrie {
     for (let i = 0, k = term.length;
          (i < k) && (curr !== undefined);
          i++) {
-      let label: string = term[i];
+      const label: string = term[i];
       curr = curr.transition(label);
     }
     if ((curr === undefined) || !curr.isFinal) {
@@ -286,7 +290,7 @@ export class PrefixTrie {
     curr.isFinal = false;
     curr.value = undefined;
     while ((curr.edges.size === 0) && !curr.isFinal) {
-      let label: string | undefined = curr.label;
+      const label: string | undefined = curr.label;
       curr = curr.parent;
       if (curr === undefined) {
         break;
@@ -303,7 +307,7 @@ export class PrefixTrie {
     for (let i = 0, k = term.length;
          (i < k) && (curr !== undefined);
          i++) {
-      let label: string = term[i];
+      const label: string = term[i];
       curr = curr.transition(label);
     }
     if (curr !== undefined) {
@@ -315,7 +319,7 @@ export class PrefixTrie {
     term = term.toLowerCase();
     let curr: PrefixNode | undefined = this.root;
     for (let i = 0, k = term.length; i < k; i++) {
-      let label: string = term[i];
+      const label: string = term[i];
       curr = curr.transition(label);
       if (curr === undefined) {
         break;
@@ -333,13 +337,13 @@ export class PrefixTrie {
     for (let i = 0, k = term.length;
          (i < k) && (curr !== undefined);
          i++) {
-      let label: string = term[i];
+      const label: string = term[i];
       curr = curr.transition(label);
     }
     return (curr !== undefined) && curr.isFinal;
   }
 
-  cursor() : PrefixCursor {
+  cursor(): PrefixCursor {
     return new PrefixCursor(this.root);
   }
 
@@ -348,30 +352,33 @@ export class PrefixTrie {
   }
 
   toString(): string {
-    let buffer: string[] = [];
+    const buffer: string[] = [];
     buffer.push("PrefixTrie{size=");
     buffer.push(this.size.toString())
     buffer.push(",terms=[");
-    let iter: PrefixIterator = this[Symbol.iterator]();
-    let { "value": term, "done": done } = iter.next();
+    const iter: PrefixIterator = this[Symbol.iterator]();
+    const { "value": term, "done": done } = iter.next();
     if (!done) {
       buffer.push('"');
+      // @ts-expect-error: next-line
       buffer.push(term);
       buffer.push('"');
       do {
-        let { "value": term, "done": done } = iter.next();
+        const { "value": term, "done": done } = iter.next();
         if (done) {
           break;
         }
         buffer.push(',"');
+        // @ts-expect-error: next-line
         buffer.push(term);
         buffer.push('"');
-      } while (true);
+      } while (!done);
     }
     buffer.push("]}");
     return buffer.join("");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return (that instanceof PrefixTrie) &&
       (this.size === that.size) &&

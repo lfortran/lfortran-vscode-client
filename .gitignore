@@ -10,6 +10,9 @@
 !/client/testFixture/*.txt
 !/client/test/spec/**/*.ts
 !/client/tsconfig.json
+!/eslint.config.mjs
+!/.github/workflows/*.yaml
+!/.github/workflows/*.yml
 !/.gitignore
 !/.mocharc.json
 !/package.json
@@ -17,7 +20,8 @@
 !/scripts/*.sh
 !/server/package.json
 !/server/src/*.ts
-!/server/test/bin/lfortran
+!/server/test/bin/*.ps1
+!/server/test/bin/*.sh
 !/server/test/spec/**/*.ts
 !/server/tsconfig.json
 !/tsconfig.json

@@ -116,6 +116,7 @@ export class LFortranLanguageServer {
     return result;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onInitialized(params: InitializedParams): void {
     if (this.hasConfigurationCapability) {
       // Register for all configuration changes.
@@ -131,19 +132,19 @@ export class LFortranLanguageServer {
   }
 
   extractDefinition(location: Location): string | undefined {
-    let document = this.documents.get(location.uri);
+    const document = this.documents.get(location.uri);
     if (document !== undefined) {
-      let range: Range = location.range;
+      const range: Range = location.range;
 
-      let start: Position = range.start;
-      let startLine: number = start.line;
-      let startCol: number = start.character;
+      const start: Position = range.start;
+      const startLine: number = start.line;
+      const startCol: number = start.character;
 
-      let end: Position = range.end;
-      let endLine: number = end.line;
-      let endCol: number = end.character;
+      const end: Position = range.end;
+      const endLine: number = end.line;
+      const endCol: number = end.character;
 
-      let text = document.getText();
+      const text = document.getText();
 
       let currLine = 0;
       let currCol = 0;
@@ -158,7 +159,7 @@ export class LFortranLanguageServer {
               currLine++;
               currCol = 0;
             } else if (c === '\r') {
-              let l = j + 1;
+              const l = j + 1;
               if ((l < k) && (text[l] === '\n')) {
                 j = l;
               }
@@ -168,7 +169,7 @@ export class LFortranLanguageServer {
               currCol++;
             }
           }
-          let definition: string = text.substring(i, j);
+          const definition: string = text.substring(i, j);
           return definition;
         } else {
           c = text[i];
@@ -176,7 +177,7 @@ export class LFortranLanguageServer {
             currLine++;
             currCol = 0;
           } else if (c === '\r') {
-            let j = i + 1;
+            const j = i + 1;
             if ((j < k) && (text[j] === '\n')) {
               i = j;
             }
@@ -193,11 +194,11 @@ export class LFortranLanguageServer {
   index(uri: string, symbols: SymbolInformation[]): void {
     // (symbols.length == 0) => error with document, but we still need to
     // support auto-completion.
-    let terms: string[] = [];
-    let values: CompletionItem[] = [];
+    const terms: string[] = [];
+    const values: CompletionItem[] = [];
     for (let i = 0, k = symbols.length; i < k; i++) {
-      let symbol: SymbolInformation = symbols[i];
-      let definition: string | undefined =
+      const symbol: SymbolInformation = symbols[i];
+      const definition: string | undefined =
         this.extractDefinition(symbol.location);
       terms.push(symbol.name);
       values.push({
@@ -211,7 +212,7 @@ export class LFortranLanguageServer {
       });
     }
     // TODO: Index temporary file by URI (maybe)
-    let dictionary = PrefixTrie.from(terms, values);
+    const dictionary = PrefixTrie.from(terms, values);
     this.dictionaries.set(uri, dictionary);
   }
 
@@ -221,7 +222,7 @@ export class LFortranLanguageServer {
     const settings = await this.getDocumentSettings(uri);
     const text = document?.getText();
     if (typeof text === "string") {
-      let symbols: SymbolInformation[] =
+      const symbols: SymbolInformation[] =
         await this.lfortran.showDocumentSymbols(uri, text, settings);
       if (symbols.length > 0) {
         // (symbols.length == 0) => error with document, but we still need to
@@ -258,7 +259,6 @@ export class LFortranLanguageServer {
     this.documents.all().forEach(this.validateTextDocument);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getDocumentSettings(resource: string): Thenable<ExampleSettings> {
     if (!this.hasConfigurationCapability) {
       return Promise.resolve(this.settings);
@@ -308,12 +308,12 @@ export class LFortranLanguageServer {
     let currCol = 0;
 
     for (let i = 0, k = text.length; i < k; i++) {
-      let c: string = text[i];
+      const c: string = text[i];
       if (c === '\n') {
         currLine++;
         currCol = 0;
       } else if (c === '\r') {
-        let j = i + 1;
+        const j = i + 1;
         if ((j < k) && (text[j] === '\n')) {
           i = j;
         }
@@ -324,7 +324,7 @@ export class LFortranLanguageServer {
       }
 
       if ((line === currLine) && (column === currCol)) {
-        let re_identifiable: RegExp = RE_IDENTIFIABLE;
+        const re_identifiable: RegExp = RE_IDENTIFIABLE;
         if (re_identifiable.test(c)) {
           let l = i;
           let u = i + 1;
@@ -334,7 +334,7 @@ export class LFortranLanguageServer {
           while ((u < k) && re_identifiable.test(text[u])) {
             u++;
           }
-          let query = text.substring(l, u);
+          const query = text.substring(l, u);
           return query;
         }
       }
@@ -344,13 +344,13 @@ export class LFortranLanguageServer {
   }
 
   onCompletion(documentPosition: TextDocumentPositionParams): CompletionItem[] | CompletionList | undefined {
-    let uri: string = documentPosition.textDocument.uri;
-    let document = this.documents.get(uri);
-    let dictionary = this.dictionaries.get(uri);
+    const uri: string = documentPosition.textDocument.uri;
+    const document = this.documents.get(uri);
+    const dictionary = this.dictionaries.get(uri);
     if ((document !== undefined) && (dictionary !== undefined)) {
-      let text: string = document.getText();
-      let pos: Position = documentPosition.position;
-      let query: string | null = this.extractQuery(text, pos.line, pos.character);
+      const text: string = document.getText();
+      const pos: Position = documentPosition.position;
+      const query: string | null = this.extractQuery(text, pos.line, pos.character);
       if (query !== null) {
         return Array.from(dictionary.lookup(query)) as CompletionItem[];
       }
@@ -362,17 +362,17 @@ export class LFortranLanguageServer {
   }
 
   onHover(params: HoverParams): Hover | undefined {
-    let uri: string = params.textDocument.uri;
-    let document = this.documents.get(uri);
-    let dictionary = this.dictionaries.get(uri);
+    const uri: string = params.textDocument.uri;
+    const document = this.documents.get(uri);
+    const dictionary = this.dictionaries.get(uri);
     if ((document !== undefined) && (dictionary !== undefined)) {
-      let text: string = document.getText();
-      let pos: Position = params.position;
-      let query: string | null = this.extractQuery(text, pos.line, pos.character);
+      const text: string = document.getText();
+      const pos: Position = params.position;
+      const query: string | null = this.extractQuery(text, pos.line, pos.character);
       if (query !== null) {
-        let completion: CompletionItem | undefined =
+        const completion: CompletionItem | undefined =
           dictionary.exactLookup(query) as CompletionItem;
-        let definition: string | undefined = completion?.detail;
+        const definition: string | undefined = completion?.detail;
         if (definition !== undefined) {
           return {
             contents: {
