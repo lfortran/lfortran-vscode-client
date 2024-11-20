@@ -27,6 +27,7 @@ jobs:
       #   run: Add-Content $env:GITHUB_PATH "C:\Program Files\Microsoft VS Code"
       - name: Check lfortran test script
         run: ./server/test/bin/lfortran README.md
+        shell: bash
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
