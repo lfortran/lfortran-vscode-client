@@ -114,7 +114,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
 
       try {
-        const response = spawnSync(lfortranPath, flags.concat([this.tmpFile.name]));
+        flags = flags.concat([this.tmpFile.name]);
+        const response = spawnSync(lfortranPath, flags, {
+          encoding: 'utf-8',
+          stdio: 'pipe'
+        });
         if (response.stderr) {
           console.debug("stderr: %s", response.stderr.toString());
         }
