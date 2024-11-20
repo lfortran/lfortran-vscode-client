@@ -107,8 +107,9 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         console.debug("lfortranPath = %s", lfortranPath);
       }
       if (lfortranPath === null) {
-        console.error("Failed to locate lfortran, please specify its path in the configuration.");
-        return "{}";
+        console.error(
+          "Failed to locate lfortran, please specify its path in the configuration.");
+        return "";
       }
 
       try {
