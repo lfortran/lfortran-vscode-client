@@ -34,7 +34,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns an empty list", async () => {
       let stdout = '[]';
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.showDocumentSymbols(uri, stdout, settings);
+      let response = await lfortran.showDocumentSymbols(uri, "", settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -42,7 +42,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns nothing", async () => {
       let stdout = "";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.showDocumentSymbols(uri, stdout, settings);
+      let response = await lfortran.showDocumentSymbols(uri, "", settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -50,7 +50,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns an error", async () => {
       let stdout = "error";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.showDocumentSymbols(uri, stdout, settings);
+      let response = await lfortran.showDocumentSymbols(uri, "", settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -102,7 +102,7 @@ describe("LFortranCLIAccessor", () => {
         range.start.character--;
         range.end.character--;
       }
-      let actual = await lfortran.showDocumentSymbols(uri, stdout, settings);
+      let actual = await lfortran.showDocumentSymbols(uri, "", settings);
       assert.deepEqual(actual, expected);
     });
   });
@@ -114,7 +114,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns an empty list", async () => {
       let stdout = "[]";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.lookupName(uri, stdout, line, column, settings);
+      let response = await lfortran.lookupName(uri, "", line, column, settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -122,7 +122,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns nothing", async () => {
       let stdout = "";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.lookupName(uri, stdout, line, column, settings);
+      let response = await lfortran.lookupName(uri, "", line, column, settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -130,7 +130,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns an error", async () => {
       let stdout = "error";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.lookupName(uri, stdout, line, column, settings);
+      let response = await lfortran.lookupName(uri, "", line, column, settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -177,7 +177,7 @@ describe("LFortranCLIAccessor", () => {
       range.start.character--;
       range.end.character--;
 
-      let actual = await lfortran.lookupName(uri, stdout, line, column, settings);
+      let actual = await lfortran.lookupName(uri, "", line, column, settings);
       assert.deepEqual(actual, expected);
     });
   });
@@ -186,7 +186,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns an empty list", async () => {
       let stdout = "[]";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.showErrors(uri, stdout, settings);
+      let response = await lfortran.showErrors(uri, "", settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -194,7 +194,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns nothing", async () => {
       let stdout = "";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.showErrors(uri, stdout, settings);
+      let response = await lfortran.showErrors(uri, "", settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -202,7 +202,7 @@ describe("LFortranCLIAccessor", () => {
     it("returns an empty list when lfortran returns an error", async () => {
       let stdout = "error";
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let response = await lfortran.showErrors(uri, stdout, settings);
+      let response = await lfortran.showErrors(uri, "", settings);
       assert.isArray(response);
       assert.isEmpty(response);
     });
@@ -247,7 +247,7 @@ describe("LFortranCLIAccessor", () => {
       });
 
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      let actual = await lfortran.showErrors(uri, stdout, settings);
+      let actual = await lfortran.showErrors(uri, "", settings);
       assert.deepEqual(actual, expected);
     });
   });
