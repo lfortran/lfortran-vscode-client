@@ -114,6 +114,13 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
 
       try {
+        try {
+          fs.accessSync(lfortranPath, fs.constants.X_OK);
+          console.debug("[%s] is executable", lfortranPath);
+        } catch (err) {
+          console.error("[%s] is NOT executable", lfortranPath);
+          console.error(err);
+        }
         flags = flags.concat([this.tmpFile.name]);
         const response = spawnSync(lfortranPath, flags, {
           encoding: 'utf-8',
