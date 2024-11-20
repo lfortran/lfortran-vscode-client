@@ -100,6 +100,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
 
     try {
       fs.writeFileSync(this.tmpFile.name, text);
+      console.debug("Wrote to [%s]: %s", this.tmpFile.name, fs.readFileSync(this.tmpFile.name));
 
       let lfortranPath = settings.compiler.lfortranPath;
       if (lfortranPath === "lfortran") {
