@@ -71,7 +71,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
 
   constructor() {
     // Be sure to delete the temporary file when possible.
-    let cleanUp = this.cleanUp.bind(this);
+    const cleanUp = this.cleanUp.bind(this);
     process.on("exit", cleanUp);
     process.on("SIGINT", cleanUp);
     process.on("uncaughtException", cleanUp);
@@ -82,6 +82,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       try {
         console.debug("Deleting temporary file: %s", this.tmpFile.name);
         this.tmpFile.removeCallback();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to delete temporary file: %s", this.tmpFile.name);
         console.error(error);
@@ -122,8 +123,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         }
         flags = flags.concat([this.tmpFile.name]);
         const response = spawnSync(lfortranPath, flags, {
-          encoding: 'utf-8',
-          stdio: 'pipe'
+          encoding: "utf-8",
+          stdio: "pipe"
         });
 
         if (response.error) {
@@ -141,6 +142,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
             stdout = "";
           }
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (compileError: any) {
         stdout = compileError.stdout;
         if (compileError.signal !== null) {
@@ -148,16 +150,16 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         }
         throw compileError;
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error(error);
-    } finally {
-      return stdout;
     }
+    return stdout;
   }
 
   async showDocumentSymbols(uri: string,
-                            text: string,
-                            settings: ExampleSettings): Promise<SymbolInformation[]> {
+    text: string,
+    settings: ExampleSettings): Promise<SymbolInformation[]> {
     const flags = ["--show-document-symbols"];
     const stdout = await this.runCompiler(settings, flags, text);
     let results;
@@ -171,17 +173,17 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     if (Array.isArray(results)) {
       const symbols: SymbolInformation[] = results;
       for (let i = 0, k = symbols.length; i < k; i++) {
-        let symbol: SymbolInformation = symbols[i];
+        const symbol: SymbolInformation = symbols[i];
 
-        let location: Location = symbol.location;
+        const location: Location = symbol.location;
         location.uri = uri;
 
-        let range: Range = location.range;
+        const range: Range = location.range;
 
-        let start: Position = range.start;
+        const start: Position = range.start;
         start.character--;
 
-        let end: Position = range.end;
+        const end: Position = range.end;
         end.character--;
 
         symbol.kind = SymbolKind.Function;
@@ -205,14 +207,14 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       const stdout = await this.runCompiler(settings, flags, text);
       const obj = JSON.parse(stdout);
       for (let i = 0, k = obj.length; i < k; i++) {
-        let location = obj[i].location;
+        const location = obj[i].location;
         if (location) {
-          let range: Range = location.range;
+          const range: Range = location.range;
 
-          let start: Position = range.start;
+          const start: Position = range.start;
           start.character--;
 
-          let end: Position = range.end;
+          const end: Position = range.end;
           end.character--;
 
           return [{
@@ -222,6 +224,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           }];
         }
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Failed to lookup name at line=%d, column=%d", line, column);
       console.error(error);
@@ -230,15 +233,15 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   }
 
   async showErrors(uri: string,
-                   text: string,
-                   settings: ExampleSettings): Promise<Diagnostic[]> {
+    text: string,
+    settings: ExampleSettings): Promise<Diagnostic[]> {
     const diagnostics: Diagnostic[] = [];
     try {
       const flags = ["--show-errors"];
       const stdout = await this.runCompiler(settings, flags, text);
       const results: ErrorDiagnostics = JSON.parse(stdout);
       if (results?.diagnostics) {
-        let k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems);
+        const k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems);
         for (let i = 0; i < k; i++) {
           const diagnostic: Diagnostic = results.diagnostics[i];
           diagnostic.severity = DiagnosticSeverity.Warning;
@@ -246,11 +249,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           diagnostics.push(diagnostic);
         }
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Failed to show errors");
       console.error(error);
-    } finally {
-      return diagnostics;
     }
+    return diagnostics;
   }
 }
