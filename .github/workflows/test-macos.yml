@@ -14,14 +14,15 @@ jobs:
   build:
     strategy:
       matrix:
-        node-version: ['23.x', 'latest']
+        # node-version: ['23.x', 'latest']
+        node-version: ['23.x']
         # vscode-version: ['1.95.3', 'latest']
 
     runs-on: macos-latest
 
     steps:
-      - name: Install VSCode
-        run: brew install --cask visual-studio-code
+      # - name: Install VSCode
+      #   run: brew install --cask visual-studio-code
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

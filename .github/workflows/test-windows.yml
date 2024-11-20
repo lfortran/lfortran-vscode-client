@@ -14,17 +14,17 @@ jobs:
   build:
     strategy:
       matrix:
-        node-version: ['23.x', 'latest']
+        # node-version: ['23.x', 'latest']
+        node-version: ['23.x']
         # vscode-version: ['1.95.3', 'latest']
 
     runs-on: windows-latest
 
     steps:
-      - name: Install VSCode
-        run: choco install vscode
-      - run: dir "C:\Program Files\Microsoft VS Code"
-      - name: Append vscode to path
-        run: Add-Content $env:GITHUB_PATH "C:\Program Files\Microsoft VS Code"
+      # - name: Install VSCode
+      #   run: choco install vscode
+      # - name: Append vscode to path
+      #   run: Add-Content $env:GITHUB_PATH "C:\Program Files\Microsoft VS Code"
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

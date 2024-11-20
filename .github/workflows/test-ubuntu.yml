@@ -14,14 +14,15 @@ jobs:
   build:
     strategy:
       matrix:
-        node-version: ['23.x', 'latest']
+        # node-version: ['23.x', 'latest']
+        node-version: ['23.x']
         # vscode-version: ['1.95.3', 'latest']
 
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install VSCode
-        run: sudo snap install code --classic
+      # - name: Install VSCode
+      #   run: sudo snap install code --classic
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
