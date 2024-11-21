@@ -1,6 +1,8 @@
 # lfortran-lsp
 
-LFortran implementation of LSP for VSCode.
+[![Test Ubuntu](https://github.com/lfortran/lfortran-lsp/actions/workflows/test-ubuntu.yml/badge.svg)](https://github.com/lfortran/lfortran-lsp/actions/workflows/test-ubuntu.yml) [![Test MacOS](https://github.com/lfortran/lfortran-lsp/actions/workflows/test-macos.yml/badge.svg)](https://github.com/lfortran/lfortran-lsp/actions/workflows/test-macos.yml) [![Test Windows](https://github.com/lfortran/lfortran-lsp/actions/workflows/test-windows.yml/badge.svg)](https://github.com/lfortran/lfortran-lsp/actions/workflows/test-windows.yml) [![Lint Sources](https://github.com/lfortran/lfortran-lsp/actions/workflows/lint-sources.yml/badge.svg)](https://github.com/lfortran/lfortran-lsp/actions/workflows/lint-sources.yml)
+
+LFortran implementation of Microsoft's Language Server Protocol (LSP) for VSCode.
 
 ## Key Features
 
@@ -48,8 +50,7 @@ Development, and test the extension. :)
 To package the extension, you can do:
 
 ```bash
-npm install --save-dev vsce
-vsce package
+npx vsce package
 ```
 
 This will generate a `.vsix` file in your `lfortran-lsp` folder, which can then be

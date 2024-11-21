@@ -1,0 +1,32 @@
+name: Test Ubuntu
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        # node-version: ['23.x', 'latest']
+        node-version: ['23.x']
+        # vscode-version: ['1.95.3', 'latest']
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # - name: Install VSCode
+      #   run: sudo snap install code --classic
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - run: npm test
