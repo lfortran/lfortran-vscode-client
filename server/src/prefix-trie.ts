@@ -295,6 +295,7 @@ export class PrefixTrie {
       if (curr === undefined) {
         break;
       }
+      // @ts-expect-error: next-line
       curr.edges.delete(label);
     }
     this.size--;

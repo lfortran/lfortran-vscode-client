@@ -90,6 +90,18 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     }
   }
 
+  async checkPathExistsAndIsExecutable(path: string): Promise<boolean> {
+    try {
+      const stats = await fs.promises.stat(path);
+      return stats.isFile() && (stats.mode & 0o111) !== 0;
+    } catch (err: any) {
+      if (err.code === 'ENOENT') {
+        return false; // Path doesn't exist
+      }
+      throw err; // Other errors
+    }
+  }
+
   /**
    * Invokes LFortran through its command-line interface with the given
    * settings, flags, and document text.
@@ -102,11 +114,12 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     try {
       fs.writeFileSync(this.tmpFile.name, text);
 
-      let lfortranPath = settings.compiler.lfortranPath;
-      if (lfortranPath === "lfortran") {
+      let lfortranPath: string | null = settings.compiler.lfortranPath;
+      if (lfortranPath === "lfortran" || !(await this.checkPathExistsAndIsExecutable(lfortranPath))) {
         lfortranPath = await which("lfortran", { nothrow: true });
         console.debug("lfortranPath = %s", lfortranPath);
       }
+
       if (lfortranPath === null) {
         console.error(
           "Failed to locate lfortran, please specify its path in the configuration.");

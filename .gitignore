@@ -10,10 +10,13 @@
 !/client/testFixture/*.txt
 !/client/test/spec/**/*.ts
 !/client/tsconfig.json
+!/esbuild.js
 !/eslint.config.mjs
 !/.github/workflows/*.yaml
 !/.github/workflows/*.yml
 !/.gitignore
+!/integ/spec/**/*.ts
+!/integ/tsconfig.json
 !/.mocharc.json
 !/package.json
 !/README.md
@@ -25,3 +28,8 @@
 !/server/test/spec/**/*.ts
 !/server/tsconfig.json
 !/tsconfig.json
+!/.vscodeignore
+!/settings.json
+
+# Exclude problematic file patterns
+/.test-extensions

@@ -67,19 +67,25 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "esbuild-base": "esbuild server/src/main.ts client/src/extension.ts --bundle --outdir=out --external:vscode --format=cjs --platform=node",
-    "esbuild": "npm run esbuild-base -- --sourcemap --minify",
-    "compile": "npm run esbuild",
-    "install": "cd server && npm install && cd ../client && npm install && cd ..",
-    "watch": "npm run esbuild-base -- --sourcemap --watch",
-    "lint": "npx eslint ./client/src ./server/src",
-    "test": "mocha server/test/spec/*.spec.ts"
+    "postinstall": "cd server && npm install && cd ../client && npm install && cd ..",
+    "compile": "npm run check-types && node esbuild.js",
+    "check-types": "tsc --noEmit",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "vscode:prepublish": "npm run package",
+    "lint": "eslint ./server/src ./server/test/spec ./client/src ./client/test/spec ./integ/spec",
+    "test": "mocha server/test/spec/*.spec.ts",
+    "integ:transpile": "tsc -b ./integ",
+    "integ:test": "extest setup-and-run './out/integ/spec/**/*.spec.js' --code_version max --code_settings settings.json --extensions_dir .test-extensions",
+    "integ": "npm run integ:transpile && npm run integ:test",
+    "package": "npm run check-types && node esbuild.js --production"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.699.0",
     "@eslint/js": "^9.15.0",
     "@types/chai": "^5.0.1",
-    "@types/mocha": "^10.0.9",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.9.1",
     "@types/sinon": "^17.0.3",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
@@ -95,6 +101,10 @@
     "ts-sinon": "^2.0.2",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.15.0"
+    "typescript-eslint": "^8.15.0",
+    "vscode-extension-tester": "^8.9.0"
+  },
+  "dependencies": {
+    "@types/which": "^3.0.4"
   }
 }
