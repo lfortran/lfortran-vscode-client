@@ -27,12 +27,28 @@ declare -a ADDITIONAL_ARGS
 function initialize-conda() {
   if [ -z "$CONDA_SHLVL" ] || (( CONDA_SHLVL == 0 )); then
     echo "Initializing conda"
-    __conda_setup="$("$HOME/miniforge3/bin/conda" 'shell.bash' 'hook' 2> /dev/null)"
+    if command -v conda &>/dev/null; then
+      __conda_setup="$(conda 'shell.bash' 'hook' 2> /dev/null)"
+    elif [ -n "$CONDA_PREFIX_1" ]; then
+      __conda_setup="$("$CONDA_PREFIX_1/bin/conda" 'shell.bash' 'hook' 2> /dev/null)"
+    elif [ -n "$CONDA_PREFIX" ]; then
+      __conda_setup="$("$CONDA_PREFIX/bin/conda" 'shell.bash' 'hook' 2> /dev/null)"
+    else
+      __conda_setup="$("$HOME/miniforge3/bin/conda" 'shell.bash' 'hook' 2> /dev/null)"
+    fi
     if [ $? -eq 0 ]; then
       eval "$__conda_setup"
     else
-      if [ -f "$HOME/miniforge3/etc/profile.d/conda.sh"  ]; then
+      if [ -f "$CONDA_PREFIX_1/etc/profile.d/conda.sh" ]; then
+        source "$CONDA_PREFIX_1/etc/profile.d/conda.sh"
+      elif [ -f "$CONDA_PREFIX/etc/profile.d/conda.sh" ]; then
+        source "$CONDA_PREFIX/etc/profile.d/conda.sh"
+      elif [ -f "$HOME/miniforge3/etc/profile.d/conda.sh"  ]; then
         source "$HOME/miniforge3/etc/profile.d/conda.sh"
+      elif [ -n "$CONDA_PREFIX_1" ]; then
+        export PATH="$CONDA_PREFIX_1/bin:$PATH"
+      elif [ -n "$CONDA_PREFIX" ]; then
+        export PATH="$CONDA_PREFIX/bin:$PATH"
       else
         export PATH="$HOME/miniforge3/bin:$PATH"
       fi
