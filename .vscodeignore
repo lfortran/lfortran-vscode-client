@@ -19,3 +19,4 @@ versions.txt
 .vscodeignore
 .vscode-test
 out/integ
+lfortran
