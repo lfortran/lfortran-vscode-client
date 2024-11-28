@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 EXIT_SUCCESS=0
 EXIT_CONDA_FAILED=1
