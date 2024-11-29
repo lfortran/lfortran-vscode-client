@@ -94,6 +94,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     try {
       const stats = await fs.promises.stat(path);
       return stats.isFile() && (stats.mode & 0o111) !== 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err.code === 'ENOENT') {
         return false; // Path doesn't exist

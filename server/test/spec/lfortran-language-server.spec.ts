@@ -48,7 +48,7 @@ describe("LFortranLanguageServer", () => {
   let server: LFortranLanguageServer;
   let document: TextDocument;
 
-  let uri: string = __filename;
+  const uri: string = __filename;
 
   beforeEach(() => {
     lfortran = new LFortranCLIAccessor();
@@ -74,7 +74,7 @@ describe("LFortranLanguageServer", () => {
   });
 
   describe("onInitialize", () => {
-    let params: InitializeParams = {
+    const params: InitializeParams = {
       processId: null,
       rootUri: uri,
       workspaceFolders: null,
@@ -82,12 +82,12 @@ describe("LFortranLanguageServer", () => {
     };
 
     it("provides document symbols", () => {
-      let result = server.onInitialize(params);
+      const result = server.onInitialize(params);
       assert.isTrue(result.capabilities.documentSymbolProvider);
     });
 
     it("provides definitions", () => {
-      let result = server.onInitialize(params);
+      const result = server.onInitialize(params);
       assert.isTrue(result.capabilities.definitionProvider);
     });
   });
@@ -97,14 +97,14 @@ describe("LFortranLanguageServer", () => {
   // });
 
   describe("onDocumentSymbol", () => {
-    let request: DocumentSymbolParams = {
+    const request: DocumentSymbolParams = {
       textDocument: {
         uri: uri
       }
     };
 
     it("Returns all the symbols", async () => {
-      let response: SymbolInformation[] = [
+      const response: SymbolInformation[] = [
         {
           name: "baz",
           // NOTE: Right now, the kind is hard-coded to Function ...
@@ -143,29 +143,29 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      let stdout = JSON.stringify(response);
+      const stdout = JSON.stringify(response);
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
       document.getText.returns("");
 
-      let expected = response;
-      for (let symbol of expected) {
-        let range = symbol.location.range;
+      const expected = response;
+      for (const symbol of expected) {
+        const range = symbol.location.range;
         range.start.character--;
         range.end.character--;
       }
 
-      let actual = await server.onDocumentSymbol(request);
+      const actual = await server.onDocumentSymbol(request);
       assert.deepEqual(actual, expected);
     });
 
     it("Returns nothing when the document has not been defined", async () => {
-      let actual = await server.onDocumentSymbol(request);
+      const actual = await server.onDocumentSymbol(request);
       assert.isUndefined(actual);
     });
   });
 
   describe("onDefinition", () => {
-    let request: DefinitionParams = {
+    const request: DefinitionParams = {
       textDocument: {
         uri: uri
       },
@@ -176,7 +176,7 @@ describe("LFortranLanguageServer", () => {
     };
 
     it("returns location where symbol is defined", async () => {
-      let range: Range = {
+      const range: Range = {
         start: {
           line: 3,
           character: 12
@@ -187,7 +187,7 @@ describe("LFortranLanguageServer", () => {
         }
       };
 
-      let expected: DefinitionLink[] = [
+      const expected: DefinitionLink[] = [
         {
           targetUri: uri,
           targetRange: range,
@@ -195,7 +195,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      let stdout = JSON.stringify([
+      const stdout = JSON.stringify([
         {
           location: {
             range: {
@@ -218,22 +218,22 @@ describe("LFortranLanguageServer", () => {
       range.start.character--;
       range.end.character--;
 
-      let actual = await server.onDefinition(request);
+      const actual = await server.onDefinition(request);
       assert.deepEqual(actual, expected);
     });
 
     it("returns nothing when the document has not been defined", async () => {
-      let actual = await server.onDefinition(request);
+      const actual = await server.onDefinition(request);
       assert.isUndefined(actual);
     });
   });
 
   describe("onDidChangeConfiguration", () => {
-    let updatedSettings: ExampleSettings = {
+    const updatedSettings: ExampleSettings = {
       maxNumberOfProblems: 1234,
       compiler: settings.compiler
     };
-    let configChange: DidChangeConfigurationParams = {
+    const configChange: DidChangeConfigurationParams = {
       settings: {
         LFortranLanguageServer: updatedSettings
       }
@@ -248,7 +248,7 @@ describe("LFortranLanguageServer", () => {
     });
 
     it("re-validates the documents", () => {
-      let validateTextDocument = sinon.spy(server, "validateTextDocument");
+      const validateTextDocument = sinon.spy(server, "validateTextDocument");
       server.onDidChangeConfiguration(configChange);
       assert.isTrue(validateTextDocument.calledOnceWith(document));
     });
@@ -256,7 +256,7 @@ describe("LFortranLanguageServer", () => {
 
   describe("onDidClose", () => {
     it("removes the document from the cache", () => {
-      let event: TextDocumentChangeEvent<TextDocument> = {
+      const event: TextDocumentChangeEvent<TextDocument> = {
         document: document
       };
       server.onDidClose(event);
@@ -266,10 +266,10 @@ describe("LFortranLanguageServer", () => {
 
   describe("onDidChangeContent", () => {
     it("validates document from event", () => {
-      let event: TextDocumentChangeEvent<TextDocument> = {
+      const event: TextDocumentChangeEvent<TextDocument> = {
         document: document
       };
-      let validateTextDocument = sinon.spy(server, "validateTextDocument");
+      const validateTextDocument = sinon.spy(server, "validateTextDocument");
       server.onDidChangeContent(event);
       assert.isTrue(validateTextDocument.calledOnceWith(document));
     });
@@ -277,7 +277,7 @@ describe("LFortranLanguageServer", () => {
 
   describe("validateTextDocument", () => {
     it("returns the expected errors", async () => {
-      let diagnostics: Diagnostic[] = [
+      const diagnostics: Diagnostic[] = [
         {
           range: {
             start: {
@@ -311,21 +311,21 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      let stdout = JSON.stringify({
+      const stdout = JSON.stringify({
         diagnostics: diagnostics
       });
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
       document.getText.returns("");
 
       await server.validateTextDocument(document);
-      let sendDiagnostics = connection.sendDiagnostics;
+      const sendDiagnostics = connection.sendDiagnostics;
       assert.isTrue(sendDiagnostics.calledOnceWith({uri: uri, diagnostics }));
     });
   });
 
   describe("extractDefinition", () => {
     it("extracts definitions from the respective range", () => {
-      let text: string = [
+      const text: string = [
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit,",
         "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
         "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris",
@@ -338,18 +338,18 @@ describe("LFortranLanguageServer", () => {
 
       document.getText.returns(text);
 
-      let start: Position = {
+      const start: Position = {
         line: 0,
         character: 0,
       };
 
-      let end: Position = {
+      const end: Position = {
         line: 0,
         character: 10,
       };
 
-      let range: Range = { start, end };
-      let location: Location = { uri, range };
+      const range: Range = { start, end };
+      const location: Location = { uri, range };
 
       let definition: string = server.extractDefinition(location);
       assert.equal(definition, "Lorem ipsum");
@@ -370,20 +370,20 @@ describe("LFortranLanguageServer", () => {
 
   describe("index", () => {
     it("indexes empty lists of symbols", () => {
-      let symbols: SymbolInformation[] = [];
+      const symbols: SymbolInformation[] = [];
       server.index(uri, symbols);
-      let dictionary = server.dictionaries.get(uri);
+      const dictionary = server.dictionaries.get(uri);
       assert.isDefined(dictionary);
-      let indexed: CompletionItem[] =
+      const indexed: CompletionItem[] =
         Array.from(dictionary) as CompletionItem[];
       assert.isEmpty(indexed);
     });
 
     it("indexes singleton lists of symbols", () => {
-      let text: string = "def foo; def bar; def baz; def qux; def quo;";
+      const text: string = "def foo; def bar; def baz; def qux; def quo;";
       document.getText.returns(text);
 
-      let symbols: SymbolInformation[] = [
+      const symbols: SymbolInformation[] = [
         {
           name: "foo",
           kind: SymbolInformation.Function,
@@ -404,9 +404,9 @@ describe("LFortranLanguageServer", () => {
       ];
 
       server.index(uri, symbols);
-      let dictionary = server.dictionaries.get(uri);
+      const dictionary = server.dictionaries.get(uri);
       assert.isDefined(dictionary);
-      let indexed: CompletionItem[] =
+      const indexed: CompletionItem[] =
         Array.from(dictionary) as CompletionItem[];
       assert.deepEqual(indexed, [
         {
@@ -418,10 +418,10 @@ describe("LFortranLanguageServer", () => {
     });
 
     it("indexes lists of symbols", () => {
-      let text: string = "def foo; def bar; def baz; def qux; def quo;";
+      const text: string = "def foo; def bar; def baz; def qux; def quo;";
       document.getText.returns(text);
 
-      let symbols: SymbolInformation[] = [
+      const symbols: SymbolInformation[] = [
         {
           name: "foo",
           kind: SymbolKind.Function,
@@ -476,9 +476,9 @@ describe("LFortranLanguageServer", () => {
       ];
 
       server.index(uri, symbols);
-      let dictionary = server.dictionaries.get(uri);
+      const dictionary = server.dictionaries.get(uri);
       assert.isDefined(dictionary);
-      let indexed: CompletionItem[] =
+      const indexed: CompletionItem[] =
         Array.from(dictionary) as CompletionItem[];
       assert.deepEqual(indexed, [
         {
@@ -502,7 +502,7 @@ describe("LFortranLanguageServer", () => {
 
   describe("extractQuery", () => {
     it("expands identifiable symbols at the given location", () => {
-      let text: string = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+      const text: string = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
       let query: string = server.extractQuery(text, 0, 1);
       assert.equal(query, "Lorem");
@@ -517,10 +517,10 @@ describe("LFortranLanguageServer", () => {
 
   describe("onCompletion", () => {
     it("completes queries based on indexed terms", () => {
-      let text: string = "def foo; def bar; def baz; def qux; def quo; ba";
+      const text: string = "def foo; def bar; def baz; def qux; def quo; ba";
       document.getText.returns(text);
 
-      let symbols: SymbolInformation[] = [
+      const symbols: SymbolInformation[] = [
         {
           name: "foo",
           kind: SymbolKind.Function,
@@ -576,7 +576,7 @@ describe("LFortranLanguageServer", () => {
 
       server.index(uri, symbols);
 
-      let documentPosition: TextDocumentPositionParams = {
+      const documentPosition: TextDocumentPositionParams = {
         textDocument: {
           uri: uri,
         },
@@ -593,7 +593,7 @@ describe("LFortranLanguageServer", () => {
         actual = (actual as CompletionList).items;
       }
 
-      let expected: CompletionItem[] = [
+      const expected: CompletionItem[] = [
         {
           label: "bar",
           kind: CompletionItemKind.Text,
@@ -612,10 +612,10 @@ describe("LFortranLanguageServer", () => {
 
   describe("onHover", () => {
     it("displays a symbol's definition", async () => {
-      let text: string = "def foo; def bar; def baz; def qux; def quo; ba";
+      const text: string = "def foo; def bar; def baz; def qux; def quo; ba";
       document.getText.returns(text);
 
-      let symbols: SymbolInformation[] = [
+      const symbols: SymbolInformation[] = [
         {
           name: "foo",
           kind: SymbolKind.Function,
@@ -671,7 +671,7 @@ describe("LFortranLanguageServer", () => {
 
       server.index(uri, symbols);
 
-      let hoverParams: HoverParams = {
+      const hoverParams: HoverParams = {
         textDocument: {
           uri: uri,
         },
@@ -681,8 +681,8 @@ describe("LFortranLanguageServer", () => {
         }
       };
 
-      let response: Hover = server.onHover(hoverParams);
-      let contents: MarkedString = response.contents as MarkedString;
+      const response: Hover = server.onHover(hoverParams);
+      const contents: MarkedString = response.contents as MarkedString;
       assert.equal(contents.language, "fortran");
       assert.equal(contents.value, "def foo;");
     });

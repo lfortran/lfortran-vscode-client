@@ -74,7 +74,7 @@
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "vscode:prepublish": "npm run package",
-    "lint": "eslint ./server/src ./server/test/spec ./client/src ./client/test/spec ./integ/spec",
+    "lint": "eslint ./server/src ./server/test/spec ./client/src ./integ/spec",
     "test": "mocha server/test/spec/*.spec.ts",
     "integ:transpile": "tsc -b ./integ",
     "integ:test": "extest setup-and-run './out/integ/spec/**/*.spec.js' --code_version max --code_settings settings.json --extensions_dir .test-extensions",

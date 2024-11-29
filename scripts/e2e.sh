@@ -7,6 +7,7 @@ EXIT_GIT_FAILED=2
 EXIT_NODE_FAILED=3
 EXIT_BUILD_FAILED=4
 EXIT_UNKNOWN_ARGS=5
+EXIT_MISSING_XVFB=6
 
 CONDA_ENV=lf
 
@@ -22,6 +23,7 @@ fi
 
 declare PRINT_HELP
 declare UPDATE_LFORTRAN
+declare HEADLESS_MODE
 declare -a ADDITIONAL_ARGS
 
 function initialize-conda() {
@@ -164,7 +166,14 @@ function build-lfortran() {
 
 function run-integ-tests() {
   local RETURN_CODE
-  npm run integ
+  if [ -z "$HEADLESS_MODE" ]; then
+    npm run integ
+  elif command -v xvfb-run &>/dev/null; then
+    xvfb-run npm run integ
+  else
+    echo "Headless mode is only supported on platforms with `xvfb-run`" 1>&2
+    return $EXIT_MISSING_XVFB
+  fi
   RETURN_CODE=$?
   if (( RETURN_CODE != EXIT_SUCCESS )); then
     echo "`npm run integ` failed with status $RETURN_CODE" 1>&2
@@ -199,6 +208,10 @@ function parse-args() {
         ;;
       -u|--update-lfortran)
         UPDATE_LFORTRAN=true
+        shift
+        ;;
+      --headless)
+        HEADLESS_MODE=true
         shift
         ;;
       --*=*)

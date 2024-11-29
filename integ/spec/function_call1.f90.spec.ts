@@ -28,13 +28,6 @@ let workbench: Workbench;
 let editorView: EditorView;
 let editor: TextEditor;
 
-async function closeActiveTab(): Promise<void> {
-  // await workbench.executeCommand("revert file");
-  const closeButton: WebElement =
-    await driver.findElement(By.css("div.tabs-container>div.tab.active a.codicon-close"));
-  await closeButton.click();
-}
-
 /**
  * Details about a code completion item.
  */

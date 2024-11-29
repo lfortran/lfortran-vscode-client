@@ -17,11 +17,11 @@ interface PrefixPath {
 }
 
 describe("PrefixNode", () => {
-  let chart = (term: string): PrefixPath => {
-    let root: PrefixNode = new PrefixNode();
+  const chart = (term: string): PrefixPath => {
+    const root: PrefixNode = new PrefixNode();
     let leaf: PrefixNode = root;
     for (let i = 0, k = term.length; i < k; i++) {
-      let label = term[i];
+      const label = term[i];
       leaf = leaf.addEdge(label);
     }
     leaf.isFinal = true;
@@ -33,8 +33,8 @@ describe("PrefixNode", () => {
       fc.property(
         fc.string(),
         (term: string): void => {
-          let { leaf } = chart(term);
-          let prefix: string = leaf.collect();
+          const { leaf } = chart(term);
+          const prefix: string = leaf.collect();
           assert.equal(prefix, term);
         }
       )
@@ -46,10 +46,10 @@ describe("PrefixNode", () => {
       fc.property(
         fc.string(),
         (term: string): void => {
-          let { root } = chart(term);
+          const { root } = chart(term);
           let path: PrefixNode = root;
           for (let i = 0, k = term.length; i < k; i++) {
-            let label: string = term[i];
+            const label: string = term[i];
             path = path.transition(label);
             assert.isDefined(path);
           }
@@ -65,14 +65,14 @@ describe("PrefixNode", () => {
         fc.string(),
         fc.string(),
         (v: string, w: string): void => {
-          let { "root": lhs } = chart(v);
-          let { "root": rhs } = chart(v);
+          const { "root": lhs } = chart(v);
+          const { "root": rhs } = chart(v);
           assert.isTrue(
             lhs.equals(rhs),
             `Expected ${lhs} to equal ${rhs} for term="${v}"`
           );
           if (v !== w) {
-            let { "root": rhs } = chart(w);
+            const { "root": rhs } = chart(w);
             assert.isFalse(
               lhs.equals(rhs),
               `Expected ${lhs} to not equal ${rhs} for terms v="${v}" and w="${w}"`
@@ -87,7 +87,7 @@ describe("PrefixNode", () => {
 function insert(root: PrefixNode, term: string): PrefixNode {
   let curr: PrefixNode = root;
   for (let i = 0, k = term.length; i < k; i++) {
-    let label = term[i];
+    const label = term[i];
     curr = curr.addEdge(label);
   }
   curr.isFinal = true;
@@ -100,18 +100,18 @@ describe("PrefixIterator", () => {
       fc.property(
         fc.uniqueArray(fc.string()),
         (terms: string[]): void => {
-          let root: PrefixNode = new PrefixNode();
-          for (let term of terms) {
-            let leaf: PrefixNode = insert(root, term);
+          const root: PrefixNode = new PrefixNode();
+          for (const term of terms) {
+            const leaf: PrefixNode = insert(root, term);
             assert.equal(leaf.collect(), term);  // sanity check
           }
 
           // Validate against explicit iterator operations
           let pending: Set<string> = new Set(terms);
-          let iter = new PrefixIterator(root);
+          const iter = new PrefixIterator(root);
           assert.equal(iter.done, (terms.length === 0));
           while (!iter.done) {
-            let { "value": term, done } = iter.next();
+            const { "value": term, done } = iter.next();
             if (done) {
               assert.isNull(term);
               assert.isTrue(iter.done);
@@ -124,7 +124,7 @@ describe("PrefixIterator", () => {
 
           // Validate against implicit iterator operations
           pending = new Set(terms);
-          for (let term of new PrefixIterator(root)) {
+          for (const term of new PrefixIterator(root)) {
             assert.include(pending, term);
             pending.delete(term);
           }
@@ -140,12 +140,12 @@ describe("PrefixIterator", () => {
         fc.uniqueArray(fc.string()),
         fc.uniqueArray(fc.string()),
         (vs: string[], ws: string[]): void => {
-          let vt = new PrefixNode();
-          let wt = new PrefixNode();
-          for (let v of vs) {
+          const vt = new PrefixNode();
+          const wt = new PrefixNode();
+          for (const v of vs) {
             insert(vt, v);
           }
-          for (let w of ws) {
+          for (const w of ws) {
             insert(wt, w);
           }
           assert.isTrue(
@@ -170,38 +170,38 @@ describe("PrefixIterator", () => {
 });
 
 describe("PrefixCursor", () => {
-  let alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-  let alphanumeric = (gen): string => {
-    let index: number = gen(fc.nat, { max: alphabet.length - 1 });
-    let alnum: string = alphabet[index];
+  const alphanumeric = (gen): string => {
+    const index: number = gen(fc.nat, { max: alphabet.length - 1 });
+    const alnum: string = alphabet[index];
     return alnum;
   };
 
-  let ins = (buffer: string[], index: number, value: string): void => {
+  const ins = (buffer: string[], index: number, value: string): void => {
     buffer.splice(index, 0, value);
   };
 
-  let del = (buffer: string[], index: number): void => {
+  const del = (buffer: string[], index: number): void => {
     buffer.splice(index, 1);
   };
 
-  let sub = (buffer: string[], index: number, value: string): void => {
+  const sub = (buffer: string[], index: number, value: string): void => {
     buffer[index] = value;
   };
 
-  let mutate = (gen, buffer: string[]): number => {
+  const mutate = (gen, buffer: string[]): number => {
     let index: number;
     if (buffer.length === 0) {
       index = 0;
-      let value: string = alphanumeric(gen);
+      const value: string = alphanumeric(gen);
       buffer.push(value);
     } else {
       index = gen(fc.nat, { max: buffer.length - 1 });
-      let op = gen(fc.nat, { max: 2 });
+      const op = gen(fc.nat, { max: 2 });
       switch (op) {
         case 0: {
-          let value: string = alphanumeric(gen);
+          const value: string = alphanumeric(gen);
           ins(buffer, index, value);
           break;
         }
@@ -210,7 +210,7 @@ describe("PrefixCursor", () => {
           break;
         }
         case 2: {
-          let value: string = alphanumeric(gen);
+          const value: string = alphanumeric(gen);
           sub(buffer, index, value);
           break;
         }
@@ -219,22 +219,22 @@ describe("PrefixCursor", () => {
     return index;
   };
 
-  let uniform = (gen): number => {
+  const uniform = (gen): number => {
     return gen(fc.double, { min: 0.0, max: 1.0 });
   }
 
-  let selectWeighted = (gen, probability: number): boolean => {
+  const selectWeighted = (gen, probability: number): boolean => {
     return uniform(gen) <= probability;
   };
 
-  let normalized = (length: number): number => {
+  const normalized = (length: number): number => {
     return 1.0 / length;
   };
 
-  let sampleLabel = (gen, node: PrefixNode): string | undefined => {
+  const sampleLabel = (gen, node: PrefixNode): string | undefined => {
     let prev: string | undefined;
-    let prob: number = normalized(node.edges.size);
-    for (let label of node.edges.keys()) {
+    const prob: number = normalized(node.edges.size);
+    for (const label of node.edges.keys()) {
       if (selectWeighted(gen, prob)) {
         return label;
       }
@@ -243,12 +243,12 @@ describe("PrefixCursor", () => {
     return prev;
   };
 
-  let checkCandidates = (terms: string[],
+  const checkCandidates = (terms: string[],
                          cursor: PrefixCursor,
                          buffer: string[]): void => {
-    let prefix = buffer.join("");
-    let expected = terms.filter(term => term.startsWith(prefix));
-    let actual: string[] = Array.from(cursor);
+    const prefix = buffer.join("");
+    const expected = terms.filter(term => term.startsWith(prefix));
+    const actual: string[] = Array.from(cursor);
     expected.sort();
     actual.sort();
     assert.deepEqual(actual, expected);
@@ -260,13 +260,13 @@ describe("PrefixCursor", () => {
         fc.gen(),
         fc.uniqueArray(fc.string()),
         (gen, terms: string[]) => {
-          let root = new PrefixNode();
-          for (let term of terms) {
+          const root = new PrefixNode();
+          for (const term of terms) {
             insert(root, term);
           }
 
-          let cursor = new PrefixCursor(root);
-          let buffer: string[] = [];
+          const cursor = new PrefixCursor(root);
+          const buffer: string[] = [];
           checkCandidates(terms, cursor, buffer);
 
           while (cursor.curr !== undefined) {
@@ -297,26 +297,26 @@ describe("PrefixCursor", () => {
         fc.gen(),
         fc.uniqueArray(fc.string()),
         (gen, terms: string[]) => {
-          let root = new PrefixNode();
-          for (let term of terms) {
+          const root = new PrefixNode();
+          for (const term of terms) {
             insert(root, term);
           }
 
-          let cursor = new PrefixCursor(root);
-          let buffer: string[] = [];
+          const cursor = new PrefixCursor(root);
+          const buffer: string[] = [];
           checkCandidates(terms, cursor, buffer);
 
           while (cursor.curr !== undefined) {
-            let label: string | undefined = sampleLabel(gen, cursor.curr);
+            const label: string | undefined = sampleLabel(gen, cursor.curr);
             if (label !== undefined) {
               buffer.push(label);
               cursor.seek(label);
             }
-            let length: number = buffer.length;
-            let index: number = mutate(gen, buffer);
-            let numSteps: number = length - index;
+            const length: number = buffer.length;
+            const index: number = mutate(gen, buffer);
+            const numSteps: number = length - index;
             cursor.rewind(numSteps);
-            let suffix: string[] = buffer.slice(index);
+            const suffix: string[] = buffer.slice(index);
             cursor.seek(suffix);
             checkCandidates(terms, cursor, buffer);
           }
@@ -332,18 +332,18 @@ describe("PrefixTrie", () => {
       fc.property(
         fc.array(fc.string()),
         (terms: string[]) => {
-          let dict = new PrefixTrie();
-          let visited = new Set<string>();
-          for (let term of terms) {
-            let lowercaseTerm = term.toLowerCase();
-            let inserted: boolean = dict.insert(term);
+          const dict = new PrefixTrie();
+          const visited = new Set<string>();
+          for (const term of terms) {
+            const lowercaseTerm = term.toLowerCase();
+            const inserted: boolean = dict.insert(term);
             assert.equal(inserted, !visited.has(lowercaseTerm));
             visited.add(lowercaseTerm);
 
             let found: boolean = false;
-            for (let candidate of dict.lookup(term)) {
-              let lowercaseCandidate = candidate.toLowerCase();
-              let lowercaseTerm = term.toLowerCase();
+            for (const candidate of dict.lookup(term)) {
+              const lowercaseCandidate = candidate.toLowerCase();
+              const lowercaseTerm = term.toLowerCase();
               assert.isTrue(lowercaseCandidate.startsWith(lowercaseTerm),
                             `Expected "${lowercaseCandidate}" to start with "${lowercaseTerm}"`);
               found ||= (lowercaseCandidate === lowercaseTerm);
@@ -353,8 +353,8 @@ describe("PrefixTrie", () => {
 
           assert.equal(dict.size, visited.size);
 
-          for (let term of dict) {
-            let lowercaseTerm = term.toLowerCase();
+          for (const term of dict) {
+            const lowercaseTerm = term.toLowerCase();
             assert.include(visited, lowercaseTerm);
             visited.delete(lowercaseTerm);
           }
@@ -365,9 +365,9 @@ describe("PrefixTrie", () => {
   });
 
   it("can delete terms", () => {
-    let shuffle = (terms: string[]): void => {
+    const shuffle = (terms: string[]): void => {
       for (let i = terms.length; i !== 0;) {
-        let j = Math.floor(Math.random() * (i--));
+        const j = Math.floor(Math.random() * (i--));
         [terms[i], terms[j]] = [terms[j], terms[i]];
       }
     };
@@ -376,17 +376,17 @@ describe("PrefixTrie", () => {
       fc.property(
         fc.array(fc.string()),
         (terms: string[]) => {
-          let dict = new PrefixTrie();
-          let visited = new Set<string>(terms.map(term => term.toLowerCase()));
-          for (let term of terms) {
+          const dict = new PrefixTrie();
+          const visited = new Set<string>(terms.map(term => term.toLowerCase()));
+          for (const term of terms) {
             dict.insert(term);
           }
 
           // delete them in a different order
           shuffle(terms);
 
-          for (let term of terms) {
-            let lowercaseTerm = term.toLowerCase();
+          for (const term of terms) {
+            const lowercaseTerm = term.toLowerCase();
             if (visited.has(lowercaseTerm)) {
               assert.isTrue(dict.contains(lowercaseTerm));
               assert.isTrue(dict.remove(lowercaseTerm));
@@ -410,22 +410,22 @@ describe("PrefixTrie", () => {
         fc.uniqueArray(fc.string()),
         fc.string(),
         (gen, terms: string[], randomQuery: string) => {
-          let dict: PrefixTrie = PrefixTrie.from(terms);
+          const dict: PrefixTrie = PrefixTrie.from(terms);
 
           if (terms.length > 0) {
-            let exactIndex: number = gen(fc.nat, { max: terms.length - 1 });
-            let exactQuery: string = terms[exactIndex];
-            let exactMatch: string = dict.exactLookup(exactQuery) as string;
+            const exactIndex: number = gen(fc.nat, { max: terms.length - 1 });
+            const exactQuery: string = terms[exactIndex];
+            const exactMatch: string = dict.exactLookup(exactQuery) as string;
             assert.isDefined(exactMatch);
             assert.equal(exactQuery.toLowerCase(), exactMatch.toLowerCase());
           }
 
           if (dict.contains(randomQuery)) {
-            let exactMatch: string | undefined = dict.exactLookup(randomQuery) as string;
+            const exactMatch: string | undefined = dict.exactLookup(randomQuery) as string;
             assert.isDefined(exactMatch);
             assert.equal(randomQuery.toLowerCase(), exactMatch.toLowerCase());
           } else {
-            let exactMatch: string | undefined = dict.exactLookup(randomQuery) as string;
+            const exactMatch: string | undefined = dict.exactLookup(randomQuery) as string;
             assert.isUndefined(exactMatch);
           }
         }
