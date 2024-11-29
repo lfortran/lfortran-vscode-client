@@ -18,11 +18,15 @@ import {
   Workbench,
 } from "vscode-extension-tester";
 
-const timeout: number = 1000;
+const timeout: number = 60000;
+
+const fileName: string = "function_call1.f90";
 
 let browser: VSBrowser;
 let driver: WebDriver;
 let workbench: Workbench;
+let editorView: EditorView;
+let editor: TextEditor;
 
 async function closeActiveTab(): Promise<void> {
   // await workbench.executeCommand("revert file");
@@ -109,7 +113,8 @@ async function triggerHoverAndGetText() : Promise<string> {
         By.css('div[widgetid="editor.contrib.resizableContentHoverWidget"]')),
     timeout);
   await driver.wait(until.elementIsVisible(resizableContentHoverWidget), timeout);
-  return await resizableContentHoverWidget.getText();
+  const text: string = await resizableContentHoverWidget.getText();
+  return text;
 }
 
 // initialize the browser and webdriver
@@ -131,20 +136,20 @@ before(async () => {
 });
 
 // Create a Mocha suite
-describe("function_call1.f90", () => {
-  let editor: TextEditor;
+describe(fileName, () => {
 
   before(async () => {
-    await browser.openResources("./lfortran/tests/function_call1.f90");
-    editor = (await new EditorView().openEditor('function_call1.f90')) as TextEditor;
+    editorView = new EditorView();
+  });
+
+  beforeEach(async () => {
+    await browser.openResources(`./lfortran/tests/${fileName}`);
+    editor = (await editorView.openEditor(fileName)) as TextEditor;
   });
 
   afterEach(async () => {
     await workbench.executeCommand("revert file");
-  });
-
-  after(async () => {
-    closeActiveTab();
+    await editorView.closeEditor(fileName);
   });
 
   describe('When I type "m"', () => {

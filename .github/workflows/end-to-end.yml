@@ -31,4 +31,7 @@ jobs:
           miniforge-version: latest
           use-mamba: true
           channels: conda-forge
-      - run: ./scripts/e2e.sh
+      - name: Run headless test
+        uses: coactions/setup-xvfb@v1
+        with:
+          run: ./scripts/e2e.sh
