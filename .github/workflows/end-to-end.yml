@@ -15,9 +15,8 @@ jobs:
     strategy:
       matrix:
         node-version: ['23.x']
-
-    runs-on: ubuntu-latest
-
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -33,5 +32,6 @@ jobs:
           channels: conda-forge
       - name: Run headless test
         uses: coactions/setup-xvfb@v1
+        shell: bash -el {0}
         with:
           run: ./scripts/e2e.sh
