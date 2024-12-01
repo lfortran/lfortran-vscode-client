@@ -24,11 +24,14 @@ import {
   Location,
   Position,
   Range,
+  RenameParams,
   SymbolInformation,
   TextDocumentChangeEvent,
   TextDocumentPositionParams,
   TextDocuments,
   TextDocumentSyncKind,
+  TextEdit,
+  WorkspaceEdit,
 } from 'vscode-languageserver/node';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -101,6 +104,7 @@ export class LFortranLanguageServer {
         definitionProvider: true,
         documentSymbolProvider: true,
         hoverProvider: true,
+        renameProvider: true,
         textDocumentSync: TextDocumentSyncKind.Incremental,
       }
     };
@@ -304,24 +308,11 @@ export class LFortranLanguageServer {
   // }
 
   extractQuery(text: string, line: number, column: number): string | null {
-    let currLine = 0;
-    let currCol = 0;
+    let currLine: number = 0;
+    let currCol: number = 0;
 
     for (let i = 0, k = text.length; i < k; i++) {
       const c: string = text[i];
-      if (c === '\n') {
-        currLine++;
-        currCol = 0;
-      } else if (c === '\r') {
-        const j = i + 1;
-        if ((j < k) && (text[j] === '\n')) {
-          i = j;
-        }
-        currLine++;
-        currCol = 0;
-      } else {
-        currCol++;
-      }
 
       if ((line === currLine) && (column === currCol)) {
         const re_identifiable: RegExp = RE_IDENTIFIABLE;
@@ -338,6 +329,20 @@ export class LFortranLanguageServer {
           return query;
         }
       }
+
+      if (c === '\n') {
+        currLine++;
+        currCol = 0;
+      } else if (c === '\r') {
+        const j = i + 1;
+        if ((j < k) && (text[j] === '\n')) {
+          i = j;
+        }
+        currLine++;
+        currCol = 0;
+      } else {
+        currCol++;
+      }
     }
 
     return null;
@@ -350,9 +355,12 @@ export class LFortranLanguageServer {
     if ((document !== undefined) && (dictionary !== undefined)) {
       const text: string = document.getText();
       const pos: Position = documentPosition.position;
-      const query: string | null = this.extractQuery(text, pos.line, pos.character);
+      const line: number = pos.line;
+      const column: number = pos.character - 1;
+      const query: string | null = this.extractQuery(text, line, column);
       if (query !== null) {
-        return Array.from(dictionary.lookup(query)) as CompletionItem[];
+        const completions: CompletionItem[] = Array.from(dictionary.lookup(query)) as CompletionItem[];
+        return completions;
       }
     }
   }
@@ -368,7 +376,9 @@ export class LFortranLanguageServer {
     if ((document !== undefined) && (dictionary !== undefined)) {
       const text: string = document.getText();
       const pos: Position = params.position;
-      const query: string | null = this.extractQuery(text, pos.line, pos.character);
+      const line = pos.line;
+      const column = pos.character;
+      const query: string | null = this.extractQuery(text, line, column);
       if (query !== null) {
         const completion: CompletionItem | undefined =
           dictionary.exactLookup(query) as CompletionItem;
@@ -381,6 +391,112 @@ export class LFortranLanguageServer {
             },
           };
         }
+      }
+    }
+  }
+
+  renameSymbol(text: string, symbol: string, newName: string): TextEdit[] {
+    // case-insensitive search
+    text = text.toLowerCase();
+    symbol = symbol.toLowerCase();
+
+    const edits: TextEdit[] = [];
+
+    let currLine: number = 0;
+    let currCol: number = 0;
+
+    const k = text.length;
+    const l = symbol.length;
+    let u: string | null = null;
+    const w: string = symbol[0];
+    const reIdentifiable = RE_IDENTIFIABLE;
+    for (let i = 0; i < k; i++) {
+      const v: string = text[i];
+
+      if (v === '\n') {
+        currLine++;
+        currCol = 0;
+        u = v;
+      } else if (v === '\r') {
+        const j = i + 1;
+        if ((j < k) && (text[j] === '\n')) {
+          i = j;
+          u = '\n';
+        } else {
+          u = v;
+        }
+        currLine++;
+        currCol = 0;
+      } else if ((v === w) && ((u === null) || !reIdentifiable.test(u))) {
+        const startLine: number = currLine;
+        const startCol: number = currCol;
+
+        let j: number = 1;
+        for (; (j < l) && ((i + j) < k) && (text[i + j] === symbol[j]); j++) {
+          // empty
+        }
+
+        currCol += j;
+        i += (j - 1);
+        u = text[i];
+
+        if ((j === l) && (((i + 1) === k) || !reIdentifiable.test(text[i + 1]))) {
+          const endLine: number = currLine;
+          const endCol: number = currCol;
+
+          const range: Range = {
+            start: {
+              line: startLine,
+              character: startCol,
+            },
+            end: {
+              line: endLine,
+              character: endCol,
+            },
+          };
+
+          const edit: TextEdit = {
+            range: range,
+            newText: newName,
+          };
+
+          edits.push(edit);
+        }
+      } else {
+        currCol++;
+        u = v;
+      }
+    }
+
+    return edits;
+  }
+
+  async onRenameRequest(params: RenameParams): Promise<WorkspaceEdit | undefined | null> {
+    const newName: string = params.newName;
+    const uri: string = params.textDocument.uri;
+    const document = this.documents.get(uri);
+    if (document !== undefined) {
+      const text: string = document.getText();
+      const pos: Position = params.position;
+      // =====================================================================================
+      // FIXME: Once lfortran/lfortran issue #5524 is resolved, restore this call to lfortran:
+      // =====================================================================================
+      // const settings = await this.getDocumentSettings(uri);
+      // const edits: TextEdit[] =
+      //   await this.lfortran.renameSymbol(uri, text, pos.line, pos.character, newName, settings);
+      // return {
+      //   changes: {
+      //     [uri]: edits,
+      //   },
+      // };
+      const query: string | null = this.extractQuery(text, pos.line, pos.character);
+      if (query !== null) {
+        const edits: TextEdit[] = this.renameSymbol(text, query, newName);
+        return {
+          changes: {
+            [uri]: edits,
+          },
+        };
       }
     }
   }

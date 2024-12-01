@@ -75,7 +75,8 @@ function activate-conda() {
           pandoc \
           gcc \
           gxx \
-          libcxx
+          libcxx \
+          rapidjson
     RETURN_CODE=$?
     if (( RETURN_CODE != EXIT_SUCCESS )); then
       echo "`conda create -n $CONDA_ENV` failed with status $RETURN_CODE" 1>&2
@@ -143,7 +144,12 @@ function build-lfortran() {
       return $EXIT_BUILD_FAILED
     fi
 
-    cmake --fresh -DCMAKE_BUILD_TYPE=Debug -DWITH_LSP=yes -DWITH_LLVM=yes -DCMAKE_INSTALL_PREFIX=`pwd`/inst .
+    cmake --fresh \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DWITH_LSP=yes \
+          -DWITH_LLVM=yes \
+          -DWITH_JSON=yes \
+          -DCMAKE_INSTALL_PREFIX=`pwd`/inst .
     RETURN_CODE=$?
     if (( RETURN_CODE != EXIT_SUCCESS )); then
       echo "cmake failed with status $RETURN_CODE" 1>&2
@@ -191,6 +197,8 @@ Usage: ./scripts/e2e.sh [OPTIONS]
 Options:
   -h|--help             Print this help text.
   -u|--update-lfortran  Whether to update LFortran before running the end-to-end tests.
+  --headless            Whether to run the tests in an XVFB framebuffer
+                        (render off-screen; no visible window).
 EOF
 }
 
