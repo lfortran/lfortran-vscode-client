@@ -75,7 +75,8 @@ function activate-conda() {
           pandoc \
           gcc \
           gxx \
-          libcxx
+          libcxx \
+          rapidjson
     RETURN_CODE=$?
     if (( RETURN_CODE != EXIT_SUCCESS )); then
       echo "`conda create -n $CONDA_ENV` failed with status $RETURN_CODE" 1>&2
