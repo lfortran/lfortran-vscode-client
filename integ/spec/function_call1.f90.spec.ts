@@ -110,6 +110,66 @@ async function triggerHoverAndGetText() : Promise<string> {
   return text;
 }
 
+async function renameSymbol(newName: string): Promise<void> {
+  // await editor.sendKeys(Key.F2);
+  await driver.actions().clear();  // necessary for the key-down event
+  await driver.actions().sendKeys(Key.F2).perform();
+  const renameInput: WebElement =
+    driver.wait(
+      until.elementLocated(
+        By.css('input.rename-input')),
+      timeout);
+  let oldName: string = await renameInput.getAttribute("value");
+  for (let i = 0, k = oldName.length;
+       (oldName.length > 0) && (i < k);
+       i++) {
+    await renameInput.sendKeys(Key.BACK_SPACE);
+    oldName = await renameInput.getAttribute("value");
+  }
+  oldName = await renameInput.getAttribute("value");
+  assert.isEmpty(
+    oldName,
+    "Failed to clear all characters from .rename-input");
+  await renameInput.sendKeys(newName);
+  await renameInput.sendKeys(Key.ENTER);
+}
+
+async function getErrorAlert(): Promise<string> {
+  await driver.actions().clear();
+  await driver.actions().sendKeys(Key.F8).perform();
+  // NOTE: k=10 might be excessive, but I don't like failing due to a lack
+  // of retries ...
+  // ---------------------------------------------------------------------
+  for (let i = 0, k = 10; i < k; i++) {
+    try {
+      const outerElement: WebElement =
+        await driver.wait(
+          until.elementLocated(
+            By.css('div.message[role="alert"][aria-label^="error"] div')),
+          timeout);
+      const innerElement: WebElement =
+        await outerElement.findElement(
+          By.css(':first-child'));
+      const outerMessage: string = await outerElement.getText();
+      const innerMessage: string = await innerElement.getText();
+      // NOTE: Drop the inner message from the error message since it contains
+      // the name of the plugin:
+      // ---------------------------------------------------------------------
+      const errorMessage: string =
+        outerMessage.substring(0, outerMessage.length - innerMessage.length);
+      return errorMessage;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      const retryMessage: string =
+        "stale element reference: stale element not found in the current frame";
+      if (!error.message.startsWith(retryMessage) || ((i + 1) == k)) {
+        throw error;
+      }
+    }
+  }
+  throw new Error("This should not be reached!");
+}
+
 // initialize the browser and webdriver
 before(async () => {
   browser = VSBrowser.instance;
@@ -143,6 +203,7 @@ describe(fileName, () => {
   afterEach(async () => {
     await workbench.executeCommand("revert file");
     await editorView.closeEditor(fileName);
+    await driver.actions().clear();
   });
 
   describe('When I type "m"', () => {
@@ -249,6 +310,48 @@ describe(fileName, () => {
       const [line, column] = await editor.getCoordinates();
       assert.equal(line, 8);
       assert.equal(column, 5);
+    });
+  });
+
+  describe('When I rename eval_1d to foo', () => {
+    it('should rename all the respective symbols', async () => {
+      await editor.setCursor(18, 22);  // hover over "eval_1d"
+      await renameSymbol("foo");
+      const text: string = await editor.getText();
+      assert.equal(text, [
+        "module module_function_call1",
+        "    type :: softmax",
+        "    contains",
+        "      procedure :: foo",
+        "    end type softmax",
+        "  contains",
+        "  ",
+        "    pure function foo(self, x) result(res)",
+        "      class(softmax), intent(in) :: self",
+        "      real, intent(in) :: x(:)",
+        "      real :: res(size(x))",
+        "    end function foo",
+        "  ",
+        "    pure function eval_1d_prime(self, x) result(res)",
+        "      class(softmax), intent(in) :: self",
+        "      real, intent(in) :: x(:)",
+        "      real :: res(size(x))",
+        "      res = self%foo(x)",
+        "    end function eval_1d_prime",
+        "end module module_function_call1",
+        "",
+      ].join("\n"));
+    });
+  });
+
+  describe('When I introduce an error', () => {
+    it('should notify me of the issue.', async () => {
+      await editor.setCursor(21, 1);
+      await editor.typeText("error");
+      const errorMessage: string = await getErrorAlert();
+      assert.equal(
+        errorMessage,
+        "Statement or Declaration expected inside program, found Variable name");
     });
   });
 });

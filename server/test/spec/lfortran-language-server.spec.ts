@@ -17,11 +17,14 @@ import {
   Position,
   Range,
   RemoteWorkspace,
+  RenameParams,
   SymbolInformation,
   SymbolKind,
   TextDocumentChangeEvent,
   TextDocumentPositionParams,
   TextDocuments,
+  TextEdit,
+  WorkspaceEdit,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -319,7 +322,7 @@ describe("LFortranLanguageServer", () => {
 
       await server.validateTextDocument(document);
       const sendDiagnostics = connection.sendDiagnostics;
-      assert.isTrue(sendDiagnostics.calledOnceWith({uri: uri, diagnostics }));
+      assert.isTrue(sendDiagnostics.calledOnceWith({ uri: uri, diagnostics }));
     });
   });
 
@@ -504,10 +507,10 @@ describe("LFortranLanguageServer", () => {
     it("expands identifiable symbols at the given location", () => {
       const text: string = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-      let query: string = server.extractQuery(text, 0, 1);
+      let query: string = server.extractQuery(text, 0, 0);
       assert.equal(query, "Lorem");
 
-      query = server.extractQuery(text, 0, 6);  // actual text, ".", is not identifiable.
+      query = server.extractQuery(text, 0, 26);  // actual text, ",", is not identifiable.
       assert.isNull(query);
 
       query = server.extractQuery(text, 0, 25);
@@ -582,7 +585,7 @@ describe("LFortranLanguageServer", () => {
         },
         position: {
           line: 0,
-          character: 47,
+          character: 46,
         },
       };
 
@@ -685,6 +688,239 @@ describe("LFortranLanguageServer", () => {
       const contents: MarkedString = response.contents as MarkedString;
       assert.equal(contents.language, "fortran");
       assert.equal(contents.value, "def foo;");
+    });
+  });
+
+  describe("renameSymbol", () => {
+    describe("renaming a symbol over an empty string", () => {
+      it("should change nothing", () => {
+        const symbol: string = "foo";
+        const newName: string = "bar";
+        const text: string = "";
+        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
+        assert.isEmpty(edits);
+      });
+    });
+
+    describe("renaming a symbol in a singleton string", () => {
+      it("should change the symbol as requested", () => {
+        const symbol: string = "lorem";
+        const newName: string = "id";
+        const text: string = "lorem";
+        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
+        assert.deepEqual(edits, [
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 0,
+              },
+              end: {
+                line: 0,
+                character: 5,
+              },
+            },
+            newText: newName,
+          },
+        ]);
+      });
+    });
+
+    describe("renaming a non-existing symbol", () => {
+      it("should change nothing", () => {
+        const symbol: string = "foo";
+        const newName: string = "bar";
+        const text: string = "baz qux quo";
+        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
+        assert.isEmpty(edits);
+      });
+    });
+
+    describe("renaming a symbol on a single line", () => {
+      it("should replace all the respective terms", () => {
+        const symbol: string = "foo";
+        const newName: string = "abc";
+        const text: string = "foo bar baz%foo foo_qux quo_foo foo";
+        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
+        assert.deepEqual(edits, [
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 0,
+              },
+              end: {
+                line: 0,
+                character: 3,
+              },
+            },
+            newText: newName,
+          },
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 12,
+              },
+              end: {
+                line: 0,
+                character: 15,
+              },
+            },
+            newText: newName,
+          },
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 32,
+              },
+              end: {
+                line: 0,
+                character: 35,
+              },
+            },
+            newText: newName,
+          },
+        ]);
+      });
+    });
+
+    describe("renaming a symbol over multiple lines", () => {
+      it("should replace all respective symbols", () => {
+        const symbol: string = "foo";
+        const newName: string = "bar";
+        const text: string = [
+          "Foo bar baz",
+          "qux quo",
+          "abc%foo",
+          "foo%def",
+          "FOO foo bar_foo",
+          "baz_foo quux FoO foofoo bax_foo_qux"
+        ].join("\n");
+        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
+        assert.deepEqual(edits, [
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 0,
+              },
+              end: {
+                line: 0,
+                character: 3,
+              },
+            },
+            newText: newName,
+          },
+          {
+            range: {
+              start: {
+                line: 2,
+                character: 4,
+              },
+              end: {
+                line: 2,
+                character: 7,
+              },
+            },
+            newText: newName,
+          },
+          {
+            range: {
+              start: {
+                line: 3,
+                character: 0,
+              },
+              end: {
+                line: 3,
+                character: 3,
+              },
+            },
+            newText: newName,
+          },
+          {
+            range: {
+              start: {
+                line: 4,
+                character: 0,
+              },
+              end: {
+                line: 4,
+                character: 3,
+              },
+            },
+            newText: newName,
+          },
+          {
+            range: {
+              start: {
+                line: 4,
+                character: 4,
+              },
+              end: {
+                line: 4,
+                character: 7,
+              },
+            },
+            newText: newName,
+          },
+          {
+            range: {
+              start: {
+                line: 5,
+                character: 13,
+              },
+              end: {
+                line: 5,
+                character: 16,
+              },
+            },
+            newText: newName,
+          },
+        ]);
+      });
+    });
+  });
+
+  describe("onRenameRequest", () => {
+    it("should wrap the edits from lfortran within a WorkspaceEdit", async () => {
+      const text: string = "foo bar baz qux";
+      document.getText.returns(text);
+
+      const newName: string = "quo";
+
+      const expected: WorkspaceEdit = {
+        changes: {
+          [uri]: [
+            {
+              range: {
+                start: {
+                  line: 0,
+                  character: 0,
+                },
+                end: {
+                  line: 0,
+                  character: 3,
+                },
+              },
+              newText: newName,
+            },
+          ],
+        },
+      };
+
+      const params: RenameParams = {
+        newName: newName,
+        textDocument: document,
+        position: {
+          line: 0,
+          character: 0,
+        },
+      };
+
+      const actual: WorkspaceEdit = await server.onRenameRequest(params);
+      assert.deepEqual(actual, expected);
     });
   });
 });

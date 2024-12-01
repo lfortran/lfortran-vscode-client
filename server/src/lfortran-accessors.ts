@@ -10,6 +10,7 @@ import {
   Range,
   SymbolInformation,
   SymbolKind,
+  TextEdit,
 } from 'vscode-languageserver/node';
 
 import {
@@ -55,6 +56,13 @@ export interface LFortranAccessor {
   showErrors(uri: string,
              text: string,
              settings: ExampleSettings): Promise<Diagnostic[]>;
+
+  renameSymbol(uri: string,
+               text: string,
+               line: number,
+               column: number,
+               newName: string,
+               settings: ExampleSettings): Promise<TextEdit[]>;
 }
 
 /**
@@ -172,8 +180,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   }
 
   async showDocumentSymbols(uri: string,
-    text: string,
-    settings: ExampleSettings): Promise<SymbolInformation[]> {
+                            text: string,
+                            settings: ExampleSettings): Promise<SymbolInformation[]> {
     const flags = ["--show-document-symbols"];
     const stdout = await this.runCompiler(settings, flags, text);
     let results;
@@ -208,10 +216,10 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   }
 
   async lookupName(uri: string,
-    text: string,
-    line: number,
-    column: number,
-    settings: ExampleSettings): Promise<DefinitionLink[]> {
+                   text: string,
+                   line: number,
+                   column: number,
+                   settings: ExampleSettings): Promise<DefinitionLink[]> {
     try {
       const flags = [
         "--lookup-name",
@@ -247,27 +255,92 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   }
 
   async showErrors(uri: string,
-    text: string,
-    settings: ExampleSettings): Promise<Diagnostic[]> {
+                   text: string,
+                   settings: ExampleSettings): Promise<Diagnostic[]> {
     const diagnostics: Diagnostic[] = [];
+    let stdout: string | null = null;
     try {
       const flags = ["--show-errors"];
-      const stdout = await this.runCompiler(settings, flags, text);
-      const results: ErrorDiagnostics = JSON.parse(stdout);
-      if (results?.diagnostics) {
-        const k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems);
-        for (let i = 0; i < k; i++) {
-          const diagnostic: Diagnostic = results.diagnostics[i];
-          diagnostic.severity = DiagnosticSeverity.Warning;
-          diagnostic.source = "lfortran-lsp";
-          diagnostics.push(diagnostic);
+      stdout = await this.runCompiler(settings, flags, text);
+      if (stdout.length > 0) {
+        let results: ErrorDiagnostics;
+        try {
+          results = JSON.parse(stdout);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+          // FIXME: Remove this repair logic once the respective bug has been
+          // fixed (lfortran/lfortran issue #5525)
+          // ----------------------------------------------------------------
+          console.warn("Failed to parse response, attempting to repair and re-parse it.");
+          const repaired: string = stdout.substring(0, 28) + "{" + stdout.substring(28);
+          try {
+            results = JSON.parse(repaired);
+            console.log("Repair succeeded, see: https://github.com/lfortran/lfortran/issues/5525");
+          } catch {
+            console.error("Failed to repair response");
+            throw error;
+          }
+        }
+        if (results?.diagnostics) {
+          const k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems);
+          for (let i = 0; i < k; i++) {
+            const diagnostic: Diagnostic = results.diagnostics[i];
+            diagnostic.severity = DiagnosticSeverity.Warning;
+            diagnostic.source = "lfortran-lsp";
+            diagnostics.push(diagnostic);
+          }
         }
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Failed to show errors");
+      if (stdout !== null) {
+        console.error("Failed to parse response: %s", stdout);
+      }
       console.error(error);
     }
     return diagnostics;
+  }
+
+  async renameSymbol(uri: string,
+                     text: string,
+                     line: number,
+                     column: number,
+                     newName: string,
+                     settings: ExampleSettings): Promise<TextEdit[]> {
+    const edits: TextEdit[] = [];
+    try {
+      const flags = [
+        "--rename-symbol",
+        "--line=" + (line + 1),
+        "--column=" + (column + 1)
+      ];
+      const stdout = await this.runCompiler(settings, flags, text);
+      const obj = JSON.parse(stdout);
+      for (let i = 0, k = obj.length; i < k; i++) {
+        const location = obj[i].location;
+        if (location) {
+          const range: Range = location.range;
+
+          const start: Position = range.start;
+          start.character--;
+
+          const end: Position = range.end;
+          end.character--;
+
+          const edit: TextEdit = {
+            range: range,
+            newText: newName,
+          };
+
+          edits.push(edit);
+        }
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error("Failed to rename symbol at line=%d, column=%d", line, column);
+      console.error(error);
+    }
+    return edits;
   }
 }

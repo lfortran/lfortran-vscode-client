@@ -5,6 +5,7 @@ import {
   Range,
   SymbolInformation,
   SymbolKind,
+  TextEdit,
 } from "vscode-languageserver/node";
 
 import { LFortranCLIAccessor } from "../../src/lfortran-accessors";
@@ -248,6 +249,84 @@ describe("LFortranCLIAccessor", () => {
 
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
       const actual = await lfortran.showErrors(uri, "", settings);
+      assert.deepEqual(actual, expected);
+    });
+  });
+
+  describe("renameSymbol", () => {
+    it("decrements the exclusive ending character values to make them inclusive columns", async () => {
+      const newName: string = "foo";
+
+      const stdout: string = JSON.stringify([
+        {
+          kind: 1,
+          location: {
+            range: {
+              start: {
+                character: 5,
+                line: 8
+              },
+              end: {
+                character: 25,
+                line: 12
+              }
+            },
+            uri: "uri"
+          },
+          name: "eval_1d"
+        },
+        {
+          kind: 1,
+          location: {
+            range: {
+              start: {
+                character: 7,
+                line: 4
+              },
+              end: {
+                character: 28,
+                line: 4
+              }
+            },
+            uri: "uri"
+          },
+          name: "eval_1d"
+        }
+      ]);
+
+      sinon.stub(lfortran, "runCompiler").resolves(stdout);
+
+      const expected: TextEdit[] = [
+        {
+          range: {
+            start: {
+              line: 8,
+              character: 4,
+            },
+            end: {
+              line: 12,
+              character: 24,
+            }
+          },
+          newText: newName,
+        },
+        {
+          range: {
+            start: {
+              line: 4,
+              character: 6,
+            },
+            end: {
+              line: 4,
+              character: 27,
+            }
+          },
+          newText: newName,
+        },
+      ];
+
+      const actual: TextEdit[] =
+        await lfortran.renameSymbol(uri, "", 18, 22, newName, settings);
       assert.deepEqual(actual, expected);
     });
   });
