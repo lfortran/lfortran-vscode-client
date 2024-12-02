@@ -10,6 +10,8 @@ import { assert } from "chai";
 // import the webdriver and the high level browser wrapper
 import {
   EditorView,
+  InputBox,
+  QuickPickItem,
   Setting,
   SettingsEditor,
   TextEditor,
@@ -142,21 +144,15 @@ async function getErrorAlert(): Promise<string> {
   // ---------------------------------------------------------------------
   for (let i = 0, k = 10; i < k; i++) {
     try {
-      const outerElement: WebElement =
+      const errorAlert: WebElement =
         await driver.wait(
           until.elementLocated(
             By.css('div.message[role="alert"][aria-label^="error"] div')),
           timeout);
-      const innerElement: WebElement =
-        await outerElement.findElement(
-          By.css(':first-child'));
-      const outerMessage: string = await outerElement.getText();
-      const innerMessage: string = await innerElement.getText();
-      // NOTE: Drop the inner message from the error message since it contains
-      // the name of the plugin:
-      // ---------------------------------------------------------------------
       const errorMessage: string =
-        outerMessage.substring(0, outerMessage.length - innerMessage.length);
+        await driver.executeScript(
+          "return arguments[0].firstChild.nodeValue",
+          errorAlert);
       return errorMessage;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -352,6 +348,38 @@ describe(fileName, () => {
       assert.equal(
         errorMessage,
         "Statement or Declaration expected inside program, found Variable name");
+    });
+  });
+
+  describe('When I begin to type a command with `@`', () => {
+    it('should provide me with a list of document symbols', async () => {
+      const prompt: InputBox = await workbench.openCommandPrompt() as InputBox;
+      await prompt.setText('@');
+      const quickPicks: QuickPickItem[] = await prompt.getQuickPicks();
+      const labels: string[] =
+        await Promise.all(quickPicks.map(async (q) => await q.getLabel()));
+      let superset: string[] | Set<string> = [
+        " module_function_call1",
+        " softmax",
+        " eval_1d",
+        " self",
+        " x",
+        " res",
+        " eval_1d_prime",
+        " self",
+        " x",
+        " res",
+        " 1_eval_1d",
+      ];
+      try {
+        assert.deepEqual(labels, superset);
+      } catch (error: any) {
+        console.warn("Failed to exact-match against the suggestion list, checking if the results are a subset of the expected suggestions (such as if the window resolution is too small to display the entire list).")
+        superset = new Set<string>(superset);
+        assert.isTrue(
+          labels.reduce((acc, label) => acc && (superset as Set<string>).has(label), true),
+          `Expected ${labels} to be a subset of ${superset}`);
+      }
     });
   });
 });
