@@ -166,6 +166,83 @@ async function getErrorAlert(): Promise<string> {
   throw new Error("This should not be reached!");
 }
 
+const GET_MONOSPACE_CHAR_WIDTH: string = `
+  const span = document.createElement('span');
+  span.textContent = 'a';
+  arguments[0].appendChild(span);
+  const width = span.offsetWidth;
+  arguments[0].removeChild(span);
+  return width;
+`;
+
+async function getHighlightedText(): Promise<string[]> {
+  // ---------------------------------------------------------------------------
+  // How the algorithm works:
+  // ---------------------------------------------------------------------------
+  // 1. VSCode models each line of text as a `div.view-line` with a `style`
+  //    attribute that contains its vertical offset (`top`) and its `height`,
+  //    both in pixels.
+  // 2. When a symbol is highlighted, each occurrence of that symbol has its
+  //    location recorded in an overlay. Each overlay consists of a row with
+  //    elements representing how to format each subsequence of character.
+  // 3. Each overlay row has the same `style` attribute as its respective
+  //    `div.view-line`, as described in (1.). We can use these to look up the
+  //    line of text associated with each overlay.
+  // 4. All occurrences of the symbol within the overlay row are stored with
+  //    their horizontal offset (`left`) and width in pixels. Since the font is
+  //    monospace, all characters will have the same width and both the
+  //    horizontal offset and width will be divisible by the width of a single
+  //    character. The quotients tell us the number of characters to skip before
+  //    the symbol occurs and the number of characters in the symbol,
+  //    respectively.
+  // 5. Once all the symbol occurrences are extracted as specified by the
+  //    highlight overlays, we return them as a list.
+  // ---------------------------------------------------------------------------
+  const highlights: string[] = [];
+  const overlays: WebElement[] =
+    await driver.wait<WebElement[]>(
+      until.elementsLocated(
+        By.css("div:has(>div.cdr.wordHighlightText)")),
+      timeout);
+  for (const overlay of overlays) {
+    let style: string =
+      await driver.executeScript("return arguments[0].style.cssText", overlay);
+    style = style.replace(/ /g, "");
+    const viewLine: WebElement =
+      await driver.wait(
+        until.elementLocated(
+          By.css(`div[style="${style}"].view-line`)),
+        timeout);
+    const lineText: string = await viewLine.getText();
+    const spans: WebElement[] =
+      await overlay.findElements(By.css("div.cdr.wordHighlightText"));
+    for (const span of spans) {
+      const charWidth: number =
+        await driver.executeScript(GET_MONOSPACE_CHAR_WIDTH, span);
+      const left: number =
+        await driver.executeScript(
+          "return parseInt(arguments[0].style.left, 10)",
+          span);
+      const width: number =
+        await driver.executeScript(
+          "return parseInt(arguments[0].style.width, 10)",
+          span);
+      assert.equal(
+        left % charWidth, 0,
+        `Expected highlight offset ${left} to be divisible by ${charWidth}`);
+      assert.equal(
+        width % charWidth, 0,
+        `Expected highlight width ${width} to be divisible by ${charWidth}`);
+      const startChar: number = left / charWidth;
+      const numChars: number = width / charWidth;
+      const endChar: number = startChar + numChars;
+      const highlight = lineText.substring(startChar, endChar);
+      highlights.push(highlight);
+    }
+  }
+  return highlights;
+}
+
 // initialize the browser and webdriver
 before(async () => {
   browser = VSBrowser.instance;
@@ -380,6 +457,16 @@ describe(fileName, () => {
           labels.reduce((acc, label) => acc && (superset as Set<string>).has(label), true),
           `Expected ${labels} to be a subset of ${superset}`);
       }
+    });
+  });
+
+  describe('When I navigate over "eval_1d"', () => {
+    it('should highlight all its instances', async () => {
+      await editor.setCursor(18, 22);
+      await workbench.executeCommand("Trigger Symbol Highlight");
+      const highlights: string[] = await getHighlightedText();
+      assert.isNotEmpty(highlights);
+      assert.isTrue(highlights.every(highlight => highlight === "eval_1d"));
     });
   });
 });
