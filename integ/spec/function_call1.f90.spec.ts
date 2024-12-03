@@ -293,7 +293,7 @@ before(async () => {
   await lfortranPathSetting.setValue("./lfortran/src/bin/lfortran");
   const fontFamily: Setting =
     await settingsEditor.findSettingByID("editor.fontFamily");
-  await fontFamily.setValue("monospace");
+  await fontFamily.setValue('consolas, "DejaVu Sans Mono", monospace');
   const fontSize: Setting =
     await settingsEditor.findSettingByID("editor.fontSize");
   await fontSize.setValue("10");
