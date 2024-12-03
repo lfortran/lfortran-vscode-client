@@ -166,14 +166,47 @@ async function getErrorAlert(): Promise<string> {
   throw new Error("This should not be reached!");
 }
 
-const GET_MONOSPACE_CHAR_WIDTH: string = `
-  const span = document.createElement('span');
-  span.textContent = 'a';
-  arguments[0].appendChild(span);
-  const width = span.offsetWidth;
-  arguments[0].removeChild(span);
-  return width;
+const GET_FONT: string = `
+  const element = arguments[0];
+  const style = window.getComputedStyle(element);
+  const fontFamily = style.fontFamily;
+  const fontSize = style.fontSize;
+  const fontStretch = style.fontStretch;
+  const fontStyle = style.fontStyle;
+  const fontVariant = style.fontVariant;
+  const fontWeight = style.fontWeight;
+  const lineHeight = style.lineHeight;
+  const font = [
+    fontStyle,
+    fontVariant,
+    fontWeight,
+    fontSize + "/" + lineHeight,
+    fontStretch,
+    fontFamily,
+  ].join(" ");
+  return font;
 `;
+
+async function getFont(element: WebElement): Promise<string> {
+  const font: string = await driver.executeScript(GET_FONT, element);
+  return font;
+}
+
+const GET_TEXT_WIDTH: string = `
+  const text = arguments[0];
+  const font = arguments[1];
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  context.font = font;
+  const metrics = context.measureText(text);
+  return metrics.width;
+`;
+
+async function getTextWidth(text: string, font: string): Promise<number> {
+  const textWidth: number =
+    await driver.executeScript(GET_TEXT_WIDTH, text, font);
+  return textWidth;
+}
 
 async function getHighlightedText(): Promise<string[]> {
   // ---------------------------------------------------------------------------
@@ -199,6 +232,8 @@ async function getHighlightedText(): Promise<string[]> {
   //    highlight overlays, we return them as a list.
   // ---------------------------------------------------------------------------
   const highlights: string[] = [];
+  const font: string = await getFont(editor);
+  const charWidth: number = await getTextWidth("a", font);
   const overlays: WebElement[] =
     await driver.wait<WebElement[]>(
       until.elementsLocated(
@@ -217,24 +252,22 @@ async function getHighlightedText(): Promise<string[]> {
     const spans: WebElement[] =
       await overlay.findElements(By.css("div.cdr.wordHighlightText"));
     for (const span of spans) {
-      const charWidth: number =
-        await driver.executeScript(GET_MONOSPACE_CHAR_WIDTH, span);
-      const left: number =
+      const startPixel: number =
         await driver.executeScript(
           "return parseInt(arguments[0].style.left, 10)",
           span);
-      const width: number =
+      const numPixels: number =
         await driver.executeScript(
           "return parseInt(arguments[0].style.width, 10)",
           span);
       assert.equal(
-        left % charWidth, 0,
-        `Expected highlight offset ${left} to be divisible by ${charWidth}`);
+        startPixel % charWidth, 0,
+        `Expected highlight offset ${startPixel} to be divisible by ${charWidth}`);
       assert.equal(
-        width % charWidth, 0,
-        `Expected highlight width ${width} to be divisible by ${charWidth}`);
-      const startChar: number = left / charWidth;
-      const numChars: number = width / charWidth;
+        numPixels % charWidth, 0,
+        `Expected highlight width ${numPixels} to be divisible by ${charWidth}`);
+      const startChar: number = startPixel / charWidth;
+      const numChars: number = numPixels / charWidth;
       const endChar: number = startChar + numChars;
       const highlight = lineText.substring(startChar, endChar);
       highlights.push(highlight);
@@ -258,6 +291,12 @@ before(async () => {
   const lfortranPathSetting: Setting =
     await settingsEditor.findSettingByID("LFortranLanguageServer.compiler.lfortranPath");
   await lfortranPathSetting.setValue("./lfortran/src/bin/lfortran");
+  const fontFamily: Setting =
+    await settingsEditor.findSettingByID("editor.fontFamily");
+  await fontFamily.setValue("monospace");
+  const fontSize: Setting =
+    await settingsEditor.findSettingByID("editor.fontSize");
+  await fontSize.setValue("10");
   await new EditorView().closeAllEditors();
 });
 
