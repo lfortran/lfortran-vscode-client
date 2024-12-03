@@ -450,7 +450,7 @@ describe(fileName, () => {
       ];
       try {
         assert.deepEqual(labels, superset);
-      } catch (error: any) {
+      } catch {
         console.warn("Failed to exact-match against the suggestion list, checking if the results are a subset of the expected suggestions (such as if the window resolution is too small to display the entire list).")
         superset = new Set<string>(superset);
         assert.isTrue(
