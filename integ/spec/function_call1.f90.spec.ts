@@ -166,47 +166,47 @@ async function getErrorAlert(): Promise<string> {
   throw new Error("This should not be reached!");
 }
 
-const GET_FONT: string = `
-  const element = arguments[0];
-  const style = window.getComputedStyle(element);
-  const fontFamily = style.fontFamily;
-  const fontSize = style.fontSize;
-  const fontStretch = style.fontStretch;
-  const fontStyle = style.fontStyle;
-  const fontVariant = style.fontVariant;
-  const fontWeight = style.fontWeight;
-  const lineHeight = style.lineHeight;
-  const font = [
-    fontStyle,
-    fontVariant,
-    fontWeight,
-    fontSize + "/" + lineHeight,
-    fontStretch,
-    fontFamily,
-  ].join(" ");
-  return font;
-`;
+// const GET_FONT: string = `
+//   const element = arguments[0];
+//   const style = window.getComputedStyle(element);
+//   const fontFamily = style.fontFamily;
+//   const fontSize = style.fontSize;
+//   const fontStretch = style.fontStretch;
+//   const fontStyle = style.fontStyle;
+//   const fontVariant = style.fontVariant;
+//   const fontWeight = style.fontWeight;
+//   const lineHeight = style.lineHeight;
+//   const font = [
+//     fontStyle,
+//     fontVariant,
+//     fontWeight,
+//     fontSize + "/" + lineHeight,
+//     fontStretch,
+//     fontFamily,
+//   ].join(" ");
+//   return font;
+// `;
 
-async function getFont(element: WebElement): Promise<string> {
-  const font: string = await driver.executeScript(GET_FONT, element);
-  return font;
-}
+// async function getFont(element: WebElement): Promise<string> {
+//   const font: string = await driver.executeScript(GET_FONT, element);
+//   return font;
+// }
 
-const GET_TEXT_WIDTH: string = `
-  const text = arguments[0];
-  const font = arguments[1];
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-  context.font = font;
-  const metrics = context.measureText(text);
-  return metrics.width;
-`;
+// const GET_TEXT_WIDTH: string = `
+//   const text = arguments[0];
+//   const font = arguments[1];
+//   const canvas = document.createElement("canvas");
+//   const context = canvas.getContext("2d");
+//   context.font = font;
+//   const metrics = context.measureText(text);
+//   return metrics.width;
+// `;
 
-async function getTextWidth(text: string, font: string): Promise<number> {
-  const textWidth: number =
-    await driver.executeScript(GET_TEXT_WIDTH, text, font);
-  return textWidth;
-}
+// async function getTextWidth(text: string, font: string): Promise<number> {
+//   const textWidth: number =
+//     await driver.executeScript(GET_TEXT_WIDTH, text, font);
+//   return textWidth;
+// }
 
 async function getHighlightedText(): Promise<string[]> {
   // ---------------------------------------------------------------------------
