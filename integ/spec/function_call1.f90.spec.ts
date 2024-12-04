@@ -232,8 +232,9 @@ async function getHighlightedText(): Promise<string[]> {
   //    highlight overlays, we return them as a list.
   // ---------------------------------------------------------------------------
   const highlights: string[] = [];
-  const font: string = await getFont(editor);
-  const charWidth: number = await getTextWidth("a", font);
+  // const font: string = await getFont(editor);
+  // const charWidth: number = await getTextWidth("a", font);
+  const charWidth: number = 6;  // hardcoded for Github Actions
   const overlays: WebElement[] =
     await driver.wait<WebElement[]>(
       until.elementsLocated(
