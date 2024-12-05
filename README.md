@@ -27,15 +27,6 @@ Protocol (LSP)](https://microsoft.github.io/language-server-protocol/).
 7. Symbol Renaming: You may rename any symbol by navigating over it and pressing
    `<F2>` or by right-clicking it and choosing `"Rename Symbol"`.
 
-## Language Server
-
-- The Language Server is written in TypeScript, which uses Microsoft’s official
-  [language server module](https://github.com/microsoft/vscode-languageserver-node).
-- Communication between the language server and LFortran Compiler is done with:
-```typescript
-const stdout = await runCompiler(text, "<flags>", settings); `
-```
-
 ## Requirements
 
 ### VSCode
@@ -205,8 +196,16 @@ To run the unit tests, within the project root, run the following: `npm test`:
 ![Unit Testing LFortran LSP](https://lfortran.github.io/lfortran-lsp/videos/unit-testing-lfortran-lsp.gif)
 
 The end-to-end integration tests run best on a headless server like `xvfb`.
-Otherwise, they will open in a visible instance of VSCode but changing the
-active window or performing any action within the VSCode instance may cause the
-tests to fail. With `xvfb` installed, run the following: `xvfb-run npm run integ`:
+Otherwise, they will open in a visible instance of VSCode. If the tests are not
+run on a headless server, then changing the active window or performing any
+action within the VSCode window may cause the tests to fail.
+
+The integration tests require an instance of `lfortran` to be installed in
+project root of `lfortran-lsp`. You may either clone your instance of `lfortran`
+to the project root or symlink it to the same location. I recommend the symlink
+approach.
+
+With `xvfb` installed and your instance of `lfortran` installed to the project
+root, run the following command: `xvfb-run npm run integ`:
 
 ![Integration Testing LFortran LSP](https://lfortran.github.io/lfortran-lsp/videos/integration-testing-lfortran-lsp.gif)
