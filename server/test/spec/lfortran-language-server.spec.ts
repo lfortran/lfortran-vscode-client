@@ -31,7 +31,9 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import { ExampleSettings } from '../../src/lfortran-types';
+import {
+  ExampleSettings,
+} from '../../src/lfortran-types';
 
 import { LFortranCLIAccessor } from "../../src/lfortran-accessors";
 
@@ -287,7 +289,7 @@ describe("LFortranLanguageServer", () => {
           range: {
             start: {
               line: 0,
-              character: 10
+              character: 9
             },
             end: {
               line: 2,
@@ -302,7 +304,7 @@ describe("LFortranLanguageServer", () => {
           range: {
             start: {
               line: 5,
-              character: 13
+              character: 12
             },
             end: {
               line: 5,
@@ -317,7 +319,39 @@ describe("LFortranLanguageServer", () => {
       ];
 
       const stdout = JSON.stringify({
-        diagnostics: diagnostics
+        diagnostics: [
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 10
+              },
+              end: {
+                line: 2,
+                character: 20
+              }
+            },
+            severity: DiagnosticSeverity.Warning,
+            source: "lfortran-lsp",
+            message: "foo should be bar"
+          },
+          {
+            range: {
+              start: {
+                line: 5,
+                character: 13
+              },
+              end: {
+                line: 5,
+                character: 17
+              }
+            },
+            // NOTE: Right now, the severity is hard-coded to Warning ...
+            severity: DiagnosticSeverity.Warning,
+            source: "lfortran-lsp",
+            message: "baz should be qux"
+          },
+        ]
       });
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
       document.getText.returns("");

@@ -4,18 +4,16 @@ import {
 
 import {
   Diagnostic,
-  DiagnosticSeverity,
   Location,
   Position,
   Range,
   SymbolInformation,
-  SymbolKind,
   TextEdit,
 } from 'vscode-languageserver/node';
 
 import {
   ExampleSettings,
-  ErrorDiagnostics
+  ErrorDiagnostics,
 } from './lfortran-types';
 
 import which from 'which';
@@ -184,7 +182,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
                             settings: ExampleSettings): Promise<SymbolInformation[]> {
     const flags = ["--show-document-symbols"];
     const stdout = await this.runCompiler(settings, flags, text);
-    let results;
+    let results: SymbolInformation[];
     try {
       results = JSON.parse(stdout);
     } catch (error) {
@@ -207,8 +205,6 @@ export class LFortranCLIAccessor implements LFortranAccessor {
 
         const end: Position = range.end;
         end.character--;
-
-        symbol.kind = SymbolKind.Function;
       }
       return symbols;
     }
@@ -285,8 +281,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           const k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems);
           for (let i = 0; i < k; i++) {
             const diagnostic: Diagnostic = results.diagnostics[i];
-            diagnostic.severity = DiagnosticSeverity.Warning;
             diagnostic.source = "lfortran-lsp";
+            diagnostic.range.start.character--;
             diagnostics.push(diagnostic);
           }
         }

@@ -214,7 +214,7 @@ describe("LFortranCLIAccessor", () => {
           range: {
             start: {
               line: 0,
-              character: 10
+              character: 9
             },
             end: {
               line: 2,
@@ -229,7 +229,7 @@ describe("LFortranCLIAccessor", () => {
           range: {
             start: {
               line: 5,
-              character: 13
+              character: 12
             },
             end: {
               line: 5,
@@ -244,7 +244,38 @@ describe("LFortranCLIAccessor", () => {
       ];
 
       const stdout = JSON.stringify({
-        diagnostics: expected
+        diagnostics: [
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 10
+              },
+              end: {
+                line: 2,
+                character: 20
+              }
+            },
+            severity: DiagnosticSeverity.Warning,
+            source: "lfortran-lsp",
+            message: "foo should be bar"
+          },
+          {
+            range: {
+              start: {
+                line: 5,
+                character: 13
+              },
+              end: {
+                line: 5,
+                character: 17
+              }
+            },
+            severity: DiagnosticSeverity.Warning,
+            source: "lfortran-lsp",
+            message: "baz should be qux"
+          },
+        ]
       });
 
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
