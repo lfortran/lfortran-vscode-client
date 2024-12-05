@@ -290,7 +290,7 @@ describe("LFortranLanguageServer", () => {
           range: {
             start: {
               line: 0,
-              character: 10
+              character: 9
             },
             end: {
               line: 2,
@@ -305,7 +305,7 @@ describe("LFortranLanguageServer", () => {
           range: {
             start: {
               line: 5,
-              character: 13
+              character: 12
             },
             end: {
               line: 5,
