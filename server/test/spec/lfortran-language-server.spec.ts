@@ -33,7 +33,6 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import {
   ExampleSettings,
-  LFortranDiagnosticLevel,
 } from '../../src/lfortran-types';
 
 import { LFortranCLIAccessor } from "../../src/lfortran-accessors";
@@ -332,7 +331,7 @@ describe("LFortranLanguageServer", () => {
                 character: 20
               }
             },
-            severity: LFortranDiagnosticLevel.Warning,
+            severity: DiagnosticSeverity.Warning,
             source: "lfortran-lsp",
             message: "foo should be bar"
           },
@@ -348,7 +347,7 @@ describe("LFortranLanguageServer", () => {
               }
             },
             // NOTE: Right now, the severity is hard-coded to Warning ...
-            severity: LFortranDiagnosticLevel.Warning,
+            severity: DiagnosticSeverity.Warning,
             source: "lfortran-lsp",
             message: "baz should be qux"
           },

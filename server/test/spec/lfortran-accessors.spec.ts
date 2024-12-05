@@ -12,8 +12,6 @@ import { LFortranCLIAccessor } from "../../src/lfortran-accessors";
 
 import { settings } from "./lfortran-common";
 
-import { LFortranDiagnosticLevel } from '../../src/lfortran-types';
-
 import { assert } from "chai";
 
 import "mocha";
@@ -258,7 +256,7 @@ describe("LFortranCLIAccessor", () => {
                 character: 20
               }
             },
-            severity: LFortranDiagnosticLevel.Warning,
+            severity: DiagnosticSeverity.Warning,
             source: "lfortran-lsp",
             message: "foo should be bar"
           },
@@ -273,7 +271,7 @@ describe("LFortranCLIAccessor", () => {
                 character: 17
               }
             },
-            severity: LFortranDiagnosticLevel.Warning,
+            severity: DiagnosticSeverity.Warning,
             source: "lfortran-lsp",
             message: "baz should be qux"
           },

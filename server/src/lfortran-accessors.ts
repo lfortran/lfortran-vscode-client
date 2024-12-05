@@ -4,20 +4,16 @@ import {
 
 import {
   Diagnostic,
-  DiagnosticSeverity,
   Location,
   Position,
   Range,
   SymbolInformation,
-  SymbolKind,
   TextEdit,
 } from 'vscode-languageserver/node';
 
 import {
-  ASRSymbolType,
   ExampleSettings,
   ErrorDiagnostics,
-  LFortranDiagnosticLevel,
 } from './lfortran-types';
 
 import which from 'which';
@@ -65,72 +61,6 @@ export interface LFortranAccessor {
                column: number,
                newName: string,
                settings: ExampleSettings): Promise<TextEdit[]>;
-}
-
-const asr_symbolType_to_lsp_SymbolKind: Map<ASRSymbolType, SymbolKind | null> = new Map([
-  [ASRSymbolType.Program, null],
-  [ASRSymbolType.Module, SymbolKind.Module],
-  [ASRSymbolType.Function, SymbolKind.Function],
-  [ASRSymbolType.GenericProcedure, SymbolKind.Function],
-  [ASRSymbolType.CustomOperator, SymbolKind.Operator],
-  [ASRSymbolType.ExternalSymbol, null],
-  [ASRSymbolType.Struct, SymbolKind.Struct],
-  [ASRSymbolType.Enum, SymbolKind.Enum],
-  [ASRSymbolType.UnionType, null],
-  [ASRSymbolType.Variable, SymbolKind.Variable],
-  [ASRSymbolType.Class, SymbolKind.Class],
-  [ASRSymbolType.ClassProcedure, SymbolKind.Method],
-  [ASRSymbolType.AssociateBlock, null],
-  [ASRSymbolType.Block, null],
-  [ASRSymbolType.Requirement, null],
-  [ASRSymbolType.Template, SymbolKind.TypeParameter],
-]);
-
-function getLspSymbolKindFromAsrSymbolType(symbolType: number): SymbolKind {
-  const symbolKind: SymbolKind | null | undefined =
-    asr_symbolType_to_lsp_SymbolKind.get(symbolType);
-
-  if (symbolKind === undefined) {
-    console.warn("Unrecognized ASR::symbolType; cannot map to LSP SymbolKind: %d", symbolType);
-    return SymbolKind.Function;
-  }
-
-  if (symbolKind === null) {
-    console.debug("No direct mapping of ASR::symbolType to LSP SymbolKind: %d", symbolType);
-    return SymbolKind.Function;
-  }
-
-  return symbolKind;
-}
-
-const lfortran_diagnostic_level_to_lsp_DiagnosticSeverity: Map<LFortranDiagnosticLevel, DiagnosticSeverity | null> = new Map([
-  [LFortranDiagnosticLevel.Error, DiagnosticSeverity.Error],
-  [LFortranDiagnosticLevel.Warning, DiagnosticSeverity.Warning],
-  [LFortranDiagnosticLevel.Note, DiagnosticSeverity.Information],
-  [LFortranDiagnosticLevel.Help, DiagnosticSeverity.Hint],
-  [LFortranDiagnosticLevel.Style, DiagnosticSeverity.Warning],
-]);
-
-function getLspDiagnosticSeverityFromLFortranDiagnosticLevel(level: number | undefined): DiagnosticSeverity {
-  if (level === undefined) {
-    console.warn("Cannot map `undefined` to LSP DiagnosticSeverity");
-    return DiagnosticSeverity.Warning;
-  }
-
-  const severity: DiagnosticSeverity | null | undefined =
-    lfortran_diagnostic_level_to_lsp_DiagnosticSeverity.get(level);
-
-  if (severity === undefined) {
-    console.warn("Unrecognized diag::Level; cannot map to LSP DiagnosticSeverity: %d", level);
-    return DiagnosticSeverity.Warning;
-  }
-
-  if (severity === null) {
-    console.debug("No direct mapping of diag::Level to LSP DiagnosticSeverity: %d", level);
-    return DiagnosticSeverity.Warning;
-  }
-
-  return severity;
 }
 
 /**
@@ -275,8 +205,6 @@ export class LFortranCLIAccessor implements LFortranAccessor {
 
         const end: Position = range.end;
         end.character--;
-
-        symbol.kind = getLspSymbolKindFromAsrSymbolType(symbol.kind);
       }
       return symbols;
     }
@@ -353,8 +281,6 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           const k = Math.min(results.diagnostics.length, settings.maxNumberOfProblems);
           for (let i = 0; i < k; i++) {
             const diagnostic: Diagnostic = results.diagnostics[i];
-            diagnostic.severity =
-              getLspDiagnosticSeverityFromLFortranDiagnosticLevel(diagnostic.severity);
             diagnostic.source = "lfortran-lsp";
             diagnostic.range.start.character--;
             diagnostics.push(diagnostic);
