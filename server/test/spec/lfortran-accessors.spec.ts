@@ -12,6 +12,8 @@ import { LFortranCLIAccessor } from "../../src/lfortran-accessors";
 
 import { settings } from "./lfortran-common";
 
+import { LFortranDiagnosticLevel } from '../../src/lfortran-types';
+
 import { assert } from "chai";
 
 import "mocha";
@@ -244,7 +246,38 @@ describe("LFortranCLIAccessor", () => {
       ];
 
       const stdout = JSON.stringify({
-        diagnostics: expected
+        diagnostics: [
+          {
+            range: {
+              start: {
+                line: 0,
+                character: 10
+              },
+              end: {
+                line: 2,
+                character: 20
+              }
+            },
+            severity: LFortranDiagnosticLevel.Warning,
+            source: "lfortran-lsp",
+            message: "foo should be bar"
+          },
+          {
+            range: {
+              start: {
+                line: 5,
+                character: 13
+              },
+              end: {
+                line: 5,
+                character: 17
+              }
+            },
+            severity: LFortranDiagnosticLevel.Warning,
+            source: "lfortran-lsp",
+            message: "baz should be qux"
+          },
+        ]
       });
 
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
