@@ -89,6 +89,8 @@ ls -l src/bin/lfortran
 #-> -rwxr-xr-x 1 dylon dylon 226502136 Dec  4 22:05 src/bin/lfortran
 ```
 
+![Cloning and Building LFortran](https://lfortran.github.io/lfortran-lsp/videos/cloning-and-building-lfortran.gif)
+
 ##### Updating lfortran
 
 Updating the lfortran repository is straightforward:
