@@ -5,33 +5,6 @@
 !*/
 
 # Include specific file patterns
-!/client/package.json
-!/client/src/*.ts
-!/client/testFixture/*.txt
-!/client/test/spec/**/*.ts
-!/client/tsconfig.json
-!/esbuild.js
-!/eslint.config.mjs
-!/.github/workflows/*.yaml
-!/.github/workflows/*.yml
 !/.gitignore
-!/integ/spec/**/*.ts
-!/integ/tsconfig.json
-!/.mocharc.json
-!/package.json
 !/README.md
-!/scripts/*.sh
-!/server/package.json
-!/server/src/*.ts
-!/server/test/bin/*.ps1
-!/server/test/bin/*.sh
-!/server/test/spec/**/*.ts
-!/server/tsconfig.json
-!/settings.json
-!/tsconfig.json
-!/.vscodeignore
-
-# Exclude problematic file patterns
-/.test-extensions
-/lfortran
-/**/*.bak
+!/videos/*.gif
