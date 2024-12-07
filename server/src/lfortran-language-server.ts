@@ -13,8 +13,6 @@ import {
   Diagnostic,
   DidChangeConfigurationNotification,
   DidChangeConfigurationParams,
-  // DidChangeTextDocumentParams,
-  // DidChangeWatchedFilesParams,
   DocumentHighlight,
   DocumentHighlightParams,
   DocumentSymbolParams,
@@ -38,50 +36,83 @@ import {
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { ExampleSettings } from './lfortran-types';
+import { LFortranSettings } from './lfortran-types';
 
 import { LFortranAccessor } from './lfortran-accessors';
 
 import { PrefixTrie } from './prefix-trie';
 
+import { Logger } from './logger';
+
 // The global settings, used when the `workspace/configuration` request is not
 // supported by the client. Please note that this is not the case when using
 // this server with the client provided in this example but could happen with
 // other clients.
-const defaultSettings: ExampleSettings = {
+const defaultSettings: LFortranSettings = {
   maxNumberOfProblems: 100,
   compiler: {
-    lfortranPath: "lfortran"
-  }
+    lfortranPath: "lfortran",
+  },
+  log: {
+    level: "info",
+    benchmark: false,
+    filter: "",
+  },
 };
 
 const RE_IDENTIFIABLE: RegExp = /^[a-zA-Z0-9_]$/;
 
 export class LFortranLanguageServer {
+  static LOG_CONTEXT: string = "LFortranLanguageServer";
+
   public lfortran: LFortranAccessor;
   public connection: _Connection;
   public documents: TextDocuments<TextDocument>;
+  public logger: Logger;
 
   public hasConfigurationCapability: boolean = false;
   public hasWorkspaceFolderCapability: boolean = false;
   public hasDiagnosticRelatedInformationCapability: boolean = false;
 
-  public settings: ExampleSettings = defaultSettings;
+  public settings: LFortranSettings;
 
   // Cache the settings of all open documents
-  public documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
+  public documentSettings: Map<string, Thenable<LFortranSettings>> = new Map();
 
   public dictionaries = new Map<string, PrefixTrie>();
 
   constructor(lfortran: LFortranAccessor,
               connection: _Connection,
-              documents: TextDocuments<TextDocument>) {
+              documents: TextDocuments<TextDocument>,
+              logger: Logger,
+              settings: LFortranSettings = defaultSettings) {
+    const fnid: string = "constructor(...)";
+    const start: number = performance.now();
+
     this.lfortran = lfortran;
     this.connection = connection;
     this.documents = documents;
+    this.logger = logger;
+    this.settings = settings;
+
+    logger.configure(settings);
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [
+        lfortran,
+        connection,
+        documents,
+        logger,
+        settings,
+      ]
+    );
   }
 
   onInitialize(params: InitializeParams): InitializeResult {
+    const fnid: string = "onInitialize(...)";
+    const start: number = performance.now();
+
     const capabilities = params.capabilities;
     // Does the client support the `workspace/configuration` request?
     // If not, we fall back using global settings.
@@ -120,25 +151,36 @@ export class LFortranLanguageServer {
       };
     }
 
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [params],
+      result
+    );
     return result;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onInitialized(params: InitializedParams): void {
+    const fnid: string = "onInitialized(...)";
+    const start: number = performance.now();
+
     if (this.hasConfigurationCapability) {
       // Register for all configuration changes.
       this.connection.client
         .register(DidChangeConfigurationNotification.type, undefined);
     }
-    // if (hasWorkspaceFolderCapability) {
-    //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    //   connection.workspace.onDidChangeWorkspaceFolders(_event => {
-    //     // connection.console.log('Workspace folder change event received.');
-    //   });
-    // }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [params]
+    );
   }
 
-  extractDefinition(location: Location): string | undefined {
+  extractDefinition(location: Location): string | null {
+    const fnid: string = "extractDefinition(...)";
+    const start: number = performance.now();
+    let definition: string | null = null;
     const document = this.documents.get(location.uri);
     if (document !== undefined) {
       const range: Range = location.range;
@@ -176,8 +218,8 @@ export class LFortranLanguageServer {
               currCol++;
             }
           }
-          const definition: string = text.substring(i, j);
-          return definition;
+          definition = text.substring(i, j);
+          break;
         } else {
           c = text[i];
           if (c === '\n') {
@@ -196,16 +238,26 @@ export class LFortranLanguageServer {
         }
       }
     }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [location],
+      definition);
+    return definition;
   }
 
   index(uri: string, symbols: SymbolInformation[]): void {
+    const fnid: string = "index(...)";
+    const start: number = performance.now();
+
     // (symbols.length == 0) => error with document, but we still need to
     // support auto-completion.
     const terms: string[] = [];
     const values: CompletionItem[] = [];
     for (let i = 0, k = symbols.length; i < k; i++) {
       const symbol: SymbolInformation = symbols[i];
-      const definition: string | undefined =
+      const definition: string | null =
         this.extractDefinition(symbol.location);
       terms.push(symbol.name);
       values.push({
@@ -218,99 +270,190 @@ export class LFortranLanguageServer {
         detail: definition,
       });
     }
-    // TODO: Index temporary file by URI (maybe)
+    // TODO: Consider indexing temporary file by URI.
     const dictionary = PrefixTrie.from(terms, values);
     this.dictionaries.set(uri, dictionary);
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [uri, symbols]
+    );
   }
 
-  async onDocumentSymbol(request: DocumentSymbolParams): Promise<SymbolInformation[] | undefined> {
+  async onDocumentSymbol(request: DocumentSymbolParams): Promise<SymbolInformation[] | null> {
+    const fnid: string = "onDocumentSymbol(...)";
+    const start: number = performance.now();
+
+    let symbols: SymbolInformation[] | null = null;
     const uri = request.textDocument.uri;
+    this.settings = await this.getDocumentSettings(uri);
+    this.logger.configure(this.settings);
     const document = this.documents.get(uri);
-    const settings = await this.getDocumentSettings(uri);
     const text = document?.getText();
     if (typeof text === "string") {
-      const symbols: SymbolInformation[] =
-        await this.lfortran.showDocumentSymbols(uri, text, settings);
+      symbols =
+        await this.lfortran.showDocumentSymbols(uri, text, this.settings);
       if (symbols.length > 0) {
         // (symbols.length == 0) => error with document, but we still need to
         // support auto-completion.
         this.index(uri, symbols);
       }
-      return symbols;
     }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [request],
+      symbols
+    );
+
+    return symbols;
   }
 
-  async onDefinition(request: DefinitionParams): Promise<DefinitionLink[] | undefined> {
+  async onDefinition(request: DefinitionParams): Promise<DefinitionLink[] | null> {
+    const fnid: string = "onDefinition(...)";
+    const start: number = performance.now();
+
+    let definitions: DefinitionLink[] | null = null;
     const uri = request.textDocument.uri;
+    this.settings = await this.getDocumentSettings(uri);
+    this.logger.configure(this.settings);
     const document = this.documents.get(uri);
-    const settings = await this.getDocumentSettings(uri);
     const text = document?.getText();
     if (typeof text === "string") {
       const line = request.position.line;
       const column = request.position.character;
-      return await this.lfortran.lookupName(uri, text, line, column, settings);
+      definitions =
+        await this.lfortran.lookupName(uri, text, line, column, this.settings);
     }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [request],
+      definitions
+    );
+
+    return definitions;
   }
 
   onDidChangeConfiguration(change: DidChangeConfigurationParams): void {
+    const fnid: string = "onDidChangeConfiguration(...)";
+    const start: number = performance.now();
+
     if (this.hasConfigurationCapability) {
       // Reset all cached document settings
       this.documentSettings.clear();
     } else {
-      this.settings = <ExampleSettings>(
+      this.settings = <LFortranSettings>(
         (change.settings.LFortranLanguageServer || defaultSettings)
       );
+      this.logger.configure(this.settings);
     }
 
     // Revalidate all open text documents
-    this.documents.all().forEach(this.validateTextDocument);
+    this.documents.all().forEach(this.validateTextDocument.bind(this));
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [change]
+    );
   }
 
-  getDocumentSettings(resource: string): Thenable<ExampleSettings> {
+  getDocumentSettings(uri: string): Thenable<LFortranSettings> {
+    const fnid: string = "getDocumentSettings(...)";
+    const start: number = performance.now();
+
     if (!this.hasConfigurationCapability) {
+      this.logger.benchmarkAndTrace(
+        LFortranLanguageServer.LOG_CONTEXT,
+        fnid, start,
+        [uri],
+        this.settings
+      );
       return Promise.resolve(this.settings);
     }
-    let result = this.documentSettings.get(resource);
-    if (!result) {
-      result = this.connection.workspace.getConfiguration({
-        scopeUri: resource,
+
+    let settings: Thenable<LFortranSettings> | undefined =
+      this.documentSettings.get(uri);
+
+    if (settings === undefined) {
+      settings = this.connection.workspace.getConfiguration({
+        scopeUri: uri,
         section: 'LFortranLanguageServer'
       });
-      this.documentSettings.set(resource, result);
+      this.documentSettings.set(uri, settings);
     }
-    return result;
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [uri],
+      settings
+    );
+    return settings;
   }
 
   // Only keep settings for open documents
   onDidClose(event: TextDocumentChangeEvent<TextDocument>): void {
+    const fnid: string = "onDidClose(...)";
+    const start: number = performance.now();
+
     this.documentSettings.delete(event.document.uri);
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [event]
+    );
   }
 
   onDidChangeContent(event: TextDocumentChangeEvent<TextDocument>): void {
+    const fnid: string = "onDidChangeContent(...)";
+    const start: number = performance.now();
+
     this.validateTextDocument(event.document);
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [event]
+    );
   }
 
   async validateTextDocument(textDocument: TextDocument): Promise<void> {
-    if (!this.hasDiagnosticRelatedInformationCapability) {
-      console.error('Trying to validate a document with no diagnostic capability');
-      return;
+    const fnid: string = "validateTextDocument(...)";
+    const start: number = performance.now();
+
+    if (this.hasDiagnosticRelatedInformationCapability) {
+      const uri = textDocument.uri;
+      this.settings = await this.getDocumentSettings(uri);
+      this.logger.configure(this.settings);
+      const text = textDocument.getText();
+      const diagnostics: Diagnostic[] =
+        await this.lfortran.showErrors(uri, text, this.settings);
+      // Send the computed diagnostics to VSCode.
+      this.connection.sendDiagnostics({ uri: uri, diagnostics });
+    } else {
+      this.logger.error(
+        LFortranLanguageServer.LOG_CONTEXT,
+        'Cannot validate a document with no diagnostic capability');
     }
-    const uri = textDocument.uri;
-    const settings = await this.getDocumentSettings(uri);
-    const text = textDocument.getText();
-    const diagnostics: Diagnostic[] =
-      await this.lfortran.showErrors(uri, text, settings);
-    // Send the computed diagnostics to VSCode.
-    this.connection.sendDiagnostics({ uri: uri, diagnostics });
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [textDocument]
+    );
   }
 
-  // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // onDidChangeWatchedFiles(change: DidChangeWatchedFilesParams): void {
-  //   // Monitored files have change in VSCode
-  //   this.connection.console.log('We received an file change event');
-  // }
-
   extractQuery(text: string, line: number, column: number): string | null {
+    const fnid: string = "extractQuery(...)";
+    const start: number = performance.now();
+
+    let query: string | null = null;
     let currLine: number = 0;
     let currCol: number = 0;
 
@@ -328,8 +471,8 @@ export class LFortranLanguageServer {
           while ((u < k) && re_identifiable.test(text[u])) {
             u++;
           }
-          const query = text.substring(l, u);
-          return query;
+          query = text.substring(l, u);
+          break;
         }
       }
 
@@ -348,10 +491,20 @@ export class LFortranLanguageServer {
       }
     }
 
-    return null;
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [text, line, column],
+      query
+    );
+    return query;
   }
 
-  onCompletion(documentPosition: TextDocumentPositionParams): CompletionItem[] | CompletionList | undefined {
+  onCompletion(documentPosition: TextDocumentPositionParams): CompletionItem[] | CompletionList | null {
+    const fnid: string = "onCompletion(...)";
+    const start: number = performance.now();
+
+    let completions: CompletionItem[] | null = null;
     const uri: string = documentPosition.textDocument.uri;
     const document = this.documents.get(uri);
     const dictionary = this.dictionaries.get(uri);
@@ -362,17 +515,36 @@ export class LFortranLanguageServer {
       const column: number = pos.character - 1;
       const query: string | null = this.extractQuery(text, line, column);
       if (query !== null) {
-        const completions: CompletionItem[] = Array.from(dictionary.lookup(query)) as CompletionItem[];
-        return completions;
+        completions = Array.from(dictionary.lookup(query)) as CompletionItem[];
       }
     }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [documentPosition],
+      completions
+    );
+    return completions;
   }
 
   onCompletionResolve(item: CompletionItem): CompletionItem {
+    const fnid: string = "onCompletionResolve(...)";
+    const start: number = performance.now();
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [item],
+      item
+    );
     return item;
   }
 
-  onHover(params: HoverParams): Hover | undefined {
+  onHover(params: HoverParams): Hover | null {
+    const fnid: string = "onHover(...)";
+    const start: number = performance.now();
+
+    let hover: Hover | null = null;
     const uri: string = params.textDocument.uri;
     const document = this.documents.get(uri);
     const dictionary = this.dictionaries.get(uri);
@@ -387,7 +559,7 @@ export class LFortranLanguageServer {
           dictionary.exactLookup(query) as CompletionItem;
         const definition: string | undefined = completion?.detail;
         if (definition !== undefined) {
-          return {
+          hover = {
             contents: {
               language: "fortran",
               value: definition,
@@ -396,9 +568,20 @@ export class LFortranLanguageServer {
         }
       }
     }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [params],
+      hover
+    );
+    return hover;
   }
 
   highlightSymbol(text: string, symbol: string): Range[] {
+    const fnid: string = "highlightSymbol(...)";
+    const start: number = performance.now();
+
     // case-insensitive search
     text = text.toLowerCase();
     symbol = symbol.toLowerCase();
@@ -466,30 +649,53 @@ export class LFortranLanguageServer {
       }
     }
 
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [text, symbol],
+      highlights
+    );
     return highlights;
   }
 
   renameSymbol(text: string, symbol: string, newName: string): TextEdit[] {
-    return this.highlightSymbol(text, symbol).map(range => ({
+    const fnid: string = "renameSymbol(...)";
+    const start: number = performance.now();
+
+    const edits: TextEdit[] = this.highlightSymbol(text, symbol).map(range => ({
       range: range,
       newText: newName,
     }));
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [text, symbol, newName],
+      edits
+    );
+    return edits;
   }
 
-  async onRenameRequest(params: RenameParams): Promise<WorkspaceEdit | undefined | null> {
+  async onRenameRequest(params: RenameParams): Promise<WorkspaceEdit | null> {
+    const fnid: string = "onRenameRequest(...)";
+    const start: number = performance.now();
+
+    let workspaceEdit: WorkspaceEdit | null = null;
     const newName: string = params.newName;
     const uri: string = params.textDocument.uri;
     const document = this.documents.get(uri);
+
     if (document !== undefined) {
       const text: string = document.getText();
       const pos: Position = params.position;
+      this.settings = await this.getDocumentSettings(uri);
+      this.logger.configure(this.settings);
       // =====================================================================================
       // FIXME: Once lfortran/lfortran issue #5524 is resolved, restore this call to lfortran:
       // =====================================================================================
-      // const settings = await this.getDocumentSettings(uri);
       // const edits: TextEdit[] =
-      //   await this.lfortran.renameSymbol(uri, text, pos.line, pos.character, newName, settings);
-      // return {
+      //   await this.lfortran.renameSymbol(uri, text, pos.line, pos.character, newName, this.settings);
+      // workspaceEdit = {
       //   changes: {
       //     [uri]: edits,
       //   },
@@ -499,22 +705,37 @@ export class LFortranLanguageServer {
         const dictionary = this.dictionaries.get(uri);
         if ((dictionary !== undefined) && dictionary.contains(query)) {
           const edits: TextEdit[] = this.renameSymbol(text, query, newName);
-          const workspaceEdit: WorkspaceEdit = {
+          workspaceEdit = {
             changes: {
               [uri]: edits,
             },
           };
-          return workspaceEdit;
         } else {
-          console.warn('Cannot find symbol to rename: "%s"', query);
+          this.logger.warn(
+            LFortranLanguageServer.LFortranLanguageServer.LOG_CONTEXT,
+            'Cannot find symbol to rename: "%s"',
+            query);
         }
       }
     }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [params],
+      workspaceEdit
+    );
+    return workspaceEdit;
   }
 
-  async onDocumentHighlight(params: DocumentHighlightParams): Promise<DocumentHighlight[] | undefined | null> {
+  async onDocumentHighlight(params: DocumentHighlightParams): Promise<DocumentHighlight[] | null> {
+    const fnid: string = "onDocumentHighlight(...)";
+    const start: number = performance.now();
+
+    let highlights: DocumentHighlight[] | null = null;
     const uri: string = params.textDocument.uri;
     const document = this.documents.get(uri);
+
     if (document !== undefined) {
       const text: string = document.getText();
       const pos: Position = params.position;
@@ -522,14 +743,25 @@ export class LFortranLanguageServer {
       if (query !== null) {
         const dictionary = this.dictionaries.get(uri);
         if ((dictionary !== undefined) && dictionary.contains(query)) {
-          const highlights: DocumentHighlight[] = this.highlightSymbol(text, query).map(range => ({
+          highlights = this.highlightSymbol(text, query).map(range => ({
             range: range,
           }));
-          return highlights;
         } else {
-          console.warn('Cannot find symbol to highlight: "%s"', query);
+          this.logger.warn(
+            LFortranLanguageServer.LOG_CONTEXT,
+            'Cannot find symbol to highlight: "%s"',
+            query);
         }
       }
     }
+
+    this.logger.benchmarkAndTrace(
+      LFortranLanguageServer.LOG_CONTEXT,
+      fnid, start,
+      [params],
+      highlights
+    );
+    return highlights;
   }
 }
+

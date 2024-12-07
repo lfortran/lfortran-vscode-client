@@ -62,6 +62,46 @@
           "type": "string",
           "default": "lfortran",
           "description": "The path to the LFortran compiler executable."
+        },
+        "LFortranLanguageServer.log.level": {
+          "scope": "resource",
+          "type": "string",
+          "enum": [
+            "off",
+            "fatal",
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace",
+            "all"
+          ],
+          "default": "info",
+          "description": "Lowest level of logs to include in the extension's console output."
+        },
+        "LFortranLanguageServer.log.benchmark": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to benchmark event handlers and related operations."
+        },
+        "LFortranLanguageServer.log.filter": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "Regular expression for filtering log messages."
+        },
+        "LFortranLanguageServer.log.prettyPrint": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to pretty-print JSON objects and arrays."
+        },
+        "LFortranLanguageServer.log.indentSize": {
+          "scope": "resource",
+          "type": "number",
+          "default": 2,
+          "description": "Number of spaces to indent the pretty-printed JSON."
         }
       }
     }
@@ -105,6 +145,9 @@
     "vscode-extension-tester": "^8.9.0"
   },
   "dependencies": {
-    "@types/which": "^3.0.4"
+    "@types/shell-escape": "^0.2.3",
+    "@types/which": "^3.0.4",
+    "shell-escape": "^0.2.0",
+    "source-map-support": "^0.5.21"
   }
 }

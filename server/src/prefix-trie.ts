@@ -54,7 +54,6 @@ export class PrefixNode {
     return ss.join("");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equalsPrefix(that: any): boolean {
     return (that instanceof PrefixNode) &&
       ((this.parent === undefined) === (that.parent === undefined)) &&
@@ -63,7 +62,6 @@ export class PrefixNode {
       (this.label === that.label);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equalsSuffix(that: any): boolean {
     return (that instanceof PrefixNode) &&
       (this.isFinal === that.isFinal) &&
@@ -75,7 +73,6 @@ export class PrefixNode {
       });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return this.equalsPrefix(that) && this.equalsSuffix(that);
   }
@@ -164,7 +161,6 @@ export class PrefixIterator {
     return buffer.join("");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return (that instanceof PrefixIterator) &&
       (this.value === that.value) &&
@@ -223,7 +219,6 @@ export class PrefixCursor {
     return `PrefixCursor{prev=${prev},curr=${curr}}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return (that instanceof PrefixCursor) &&
       ((this.curr === undefined) === (that.curr === undefined)) &&
@@ -379,7 +374,6 @@ export class PrefixTrie {
     return buffer.join("");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   equals(that: any): boolean {
     return (that instanceof PrefixTrie) &&
       (this.size === that.size) &&

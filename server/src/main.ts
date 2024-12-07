@@ -1,3 +1,5 @@
+import 'source-map-support/register';
+
 import {
   _Connection,
   createConnection,
@@ -14,7 +16,11 @@ import {
 
 import { LFortranLanguageServer } from './lfortran-language-server';
 
-const lfortran: LFortranAccessor = new LFortranCLIAccessor();
+import { Logger } from './logger';
+
+const logger: Logger = new Logger();
+
+const lfortran: LFortranAccessor = new LFortranCLIAccessor(logger);
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -23,14 +29,18 @@ const connection: _Connection = createConnection(ProposedFeatures.all);
 // Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-const server = new LFortranLanguageServer(lfortran, connection, documents);
+const server = new LFortranLanguageServer(
+  lfortran,
+  connection,
+  documents,
+  logger
+);
 
 connection.onInitialize(server.onInitialize.bind(server));
 connection.onInitialized(server.onInitialized.bind(server));
 connection.onDocumentSymbol(server.onDocumentSymbol.bind(server));
 connection.onDefinition(server.onDefinition.bind(server));
 connection.onDidChangeConfiguration(server.onDidChangeConfiguration.bind(server));
-// connection.onDidChangeWatchedFiles(server.onDidChangeWatchedFiles.bind(server));
 connection.onCompletion(server.onCompletion.bind(server));
 connection.onCompletionResolve(server.onCompletionResolve.bind(server));
 connection.onHover(server.onHover.bind(server));

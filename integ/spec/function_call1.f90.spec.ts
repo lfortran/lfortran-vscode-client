@@ -154,7 +154,6 @@ async function getErrorAlert(): Promise<string> {
           "return arguments[0].firstChild.nodeValue",
           errorAlert);
       return errorMessage;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       const retryMessage: string =
         "stale element reference: stale element not found in the current frame";

@@ -1,7 +1,11 @@
 import * as esbuild from 'esbuild';
 
-const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
+
+let production = process.argv.includes('--production');
+if (process.env.LFORTRAN_LSP_MODE === "debug") {
+  production = false;
+}
 
 async function main() {
   const ctx = await esbuild.context({

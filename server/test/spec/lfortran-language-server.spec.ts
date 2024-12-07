@@ -31,15 +31,15 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import {
-  ExampleSettings,
-} from '../../src/lfortran-types';
+import { LFortranSettings } from '../../src/lfortran-types';
 
 import { LFortranCLIAccessor } from "../../src/lfortran-accessors";
 
 import { LFortranLanguageServer } from "../../src/lfortran-language-server";
 
 import { settings } from "./lfortran-common";
+
+import { Logger } from "../../src/logger";
 
 import * as sinon from "sinon";
 import { stubInterface } from "ts-sinon";
@@ -49,6 +49,7 @@ import { assert } from "chai";
 import "mocha";
 
 describe("LFortranLanguageServer", () => {
+  let logger: Logger;
   let lfortran: LFortranCLIAccessor;
   let connection: _Connection;
   let documents: TextDocuments<TextDocument>;
@@ -58,7 +59,8 @@ describe("LFortranLanguageServer", () => {
   const uri: string = __filename;
 
   beforeEach(() => {
-    lfortran = new LFortranCLIAccessor();
+    logger = new Logger(settings);
+    lfortran = new LFortranCLIAccessor(logger);
 
     connection = stubInterface<_Connection>();
     connection.workspace = stubInterface<RemoteWorkspace & PWorkspace>();
@@ -71,8 +73,13 @@ describe("LFortranLanguageServer", () => {
     documents.get.returns(document);
     documents.all.returns([document]);
 
-    server = new LFortranLanguageServer(lfortran, connection, documents);
-    server.settings = settings;
+    server = new LFortranLanguageServer(
+      lfortran,
+      connection,
+      documents,
+      logger,
+      settings
+    );
     server.hasDiagnosticRelatedInformationCapability = true;
   });
 
@@ -167,7 +174,7 @@ describe("LFortranLanguageServer", () => {
 
     it("Returns nothing when the document has not been defined", async () => {
       const actual = await server.onDocumentSymbol(request);
-      assert.isUndefined(actual);
+      assert.isNull(actual);
     });
   });
 
@@ -231,14 +238,15 @@ describe("LFortranLanguageServer", () => {
 
     it("returns nothing when the document has not been defined", async () => {
       const actual = await server.onDefinition(request);
-      assert.isUndefined(actual);
+      assert.isNull(actual);
     });
   });
 
   describe("onDidChangeConfiguration", () => {
-    const updatedSettings: ExampleSettings = {
+    const updatedSettings: LFortranSettings = {
       maxNumberOfProblems: 1234,
-      compiler: settings.compiler
+      compiler: settings.compiler,
+      log: settings.log,
     };
     const configChange: DidChangeConfigurationParams = {
       settings: {
@@ -263,6 +271,7 @@ describe("LFortranLanguageServer", () => {
 
   describe("onDidClose", () => {
     it("removes the document from the cache", () => {
+      document.getText.returns("");
       const event: TextDocumentChangeEvent<TextDocument> = {
         document: document
       };
@@ -273,6 +282,7 @@ describe("LFortranLanguageServer", () => {
 
   describe("onDidChangeContent", () => {
     it("validates document from event", () => {
+      document.getText.returns("");
       const event: TextDocumentChangeEvent<TextDocument> = {
         document: document
       };
@@ -1069,7 +1079,7 @@ describe("LFortranLanguageServer", () => {
       };
 
       const actual: DocumentHighlight[] | undefined | null = await server.onDocumentHighlight(params);
-      assert.isUndefined(actual);
+      assert.isNull(actual);
     });
 
     it("highlights symbols when they are recognized", async () => {
