@@ -35,7 +35,7 @@ describe("MovingStats", () => {
             expectedVariance += (p * p) / n;
           }
 
-          let expectedStdDev: number = Math.sqrt(expectedVariance);
+          const expectedStdDev: number = Math.sqrt(expectedVariance);
 
           let expectedMin: number = Number.MAX_VALUE;
           let expectedMax: number = Number.MIN_VALUE;

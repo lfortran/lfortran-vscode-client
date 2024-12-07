@@ -161,7 +161,6 @@ export class LFortranLanguageServer {
     return result;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onInitialized(params: InitializedParams): void {
     const fnid: string = "onInitialized(...)";
     const start: number = performance.now();
