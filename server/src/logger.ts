@@ -1,6 +1,8 @@
+import * as util from "util";
+
 import { LFortranSettings } from "./lfortran-types";
 
-import { MovingStats } from "./stats";
+import { MovingStats } from "./moving-stats";
 
 export enum LogLevel {
   OFF   = 0,
@@ -30,7 +32,9 @@ export class Logger {
   /** Whether to enable benchmarking. */
   public enableBenchmark: boolean = false;
 
-  stats: Map<string, MovingStats> = new Map();
+  public filter: RegExp = /(?:)/;
+
+  private stats: Map<string, MovingStats> = new Map();
 
   /**
    * @param level Initial `LogLevel` of this `Logger`.
@@ -44,6 +48,47 @@ export class Logger {
   configure(settings: LFortranSettings): void {
     this.level = logLevelFromName(settings.log.level);
     this.enableBenchmark = settings.log.benchmark;
+    this.filter = new RegExp(settings.log.filter);
+  }
+
+  includeString(value: string): boolean {
+    return this.filter.test(value);
+  }
+
+  includeError(error: Error): boolean {
+    const message: string = error.message;
+    return this.includeString(message);
+  }
+
+  includeTrace(array: any[]): boolean {
+    if ((array.length > 0) && (typeof array[0] === "string")) {
+      const fnid: string = array[0];
+      return this.includeString(fnid);
+    }
+    return true;
+  }
+
+  include(value: any): boolean {
+    if (typeof value === "string") {
+      return this.includeString(value);
+    }
+    if (Array.isArray(value) && (value.length > 0)) {
+      const first: any = value[0];
+      if (Array.isArray(first)) {
+        return this.includeTrace(first);
+      }
+      if (typeof first === "string") {
+        if (value.length > 1) {
+          const formatted: string = util.format(...value);
+          return this.includeString(formatted);
+        }
+        return this.includeString(first);
+      }
+    }
+    if (value instanceof Error) {
+      return this.includeError(value);
+    }
+    return true;
   }
 
   /**
@@ -115,10 +160,10 @@ export class Logger {
    * @return Whether all the log levels are enabled.
    */
   areAllEnabled(): boolean {
-    return this.level === LogLevel.ALL;
+    return this.level >= LogLevel.TRACE;  // LogLevel.TRACE => Log all messages
   }
 
-  benchmark(identifier: string, start: number): void {
+  benchmark(context: string, identifier: string, start: number): void {
     if (this.isBenchmarkEnabled()) {
       const stop: number = performance.now();
       const millis: number = stop - start;
@@ -130,7 +175,7 @@ export class Logger {
       }
       stats.observe(millis);
 
-      this.printFormat(console.log, "TIME", [
+      this.printFormat(console.log, context, "TIME", [
         "%s took %s ms (samples: %d, mean: %s +/- %s ms, min: %s ms, max: %s ms)",
         identifier,
         millis.toFixed(2),
@@ -152,14 +197,19 @@ export class Logger {
    *   consisting of an object to debug (such as a caught `Error`).
    */
   printFormat(log: (...messages_and_args: any[]) => void,
+              context: string,
               level: string,
               message_and_args: any[]): void {
     if ((message_and_args.length > 0) && (typeof message_and_args[0] === "string")) {
-      const message = message_and_args[0];
-      const formatted: string = `[${level}] ${message}`;
-      message_and_args[0] = formatted;
+      const message: string = message_and_args[0];
+      const args: any[] = message_and_args.slice(1);
+      const pattern: string = `[${context}][${level}] ${message}`;
+      const formatted: string = util.format(pattern, ...args);
+      message_and_args = [formatted];
     }
-    log.apply(console, message_and_args);
+    if (this.include(message_and_args)) {
+      log.apply(console, message_and_args);
+    }
   }
 
   /**
@@ -170,9 +220,9 @@ export class Logger {
    *   string message followed by positional arguments or a single element
    *   consisting of an object to debug (such as a caught `Error`).
    */
-  fatal(...message_and_args: any[]): void {
+  fatal(context: string, ...message_and_args: any[]): void {
     if (this.isFatalEnabled()) {
-      this.printFormat(console.error, "FATAL", message_and_args);
+      this.printFormat(console.error, context, "FATAL", message_and_args);
     }
   }
 
@@ -184,23 +234,9 @@ export class Logger {
    *   string message followed by positional arguments or a single element
    *   consisting of an object to debug (such as a caught `Error`).
    */
-  error(...message_and_args: any[]): void {
+  error(context: string, ...message_and_args: any[]): void {
     if (this.isErrorEnabled()) {
-      this.printFormat(console.error, "ERROR", message_and_args);
-    }
-  }
-
-  /**
-   * Prints an optional message to `console.error` along with a stack trace
-   * consisting of the call stack of this function. In order to use this method,
-   * the log level must be set to at least `LogLevel.ERROR`.
-   * @param message_and_args An optional vararg array that may contain either a
-   *   string message followed by positional arguments or a single element
-   *   consisting of an object to debug (such as a caught `Error`).
-   */
-  stack(...message_and_args: any[]): void {
-    if (this.isErrorEnabled()) {
-      console.trace(...message_and_args);
+      this.printFormat(console.error, context, "ERROR", message_and_args);
     }
   }
 
@@ -213,9 +249,9 @@ export class Logger {
    *   string message followed by positional arguments or a single element
    *   consisting of an object to debug (such as a caught `Error`).
    */
-  warn(...message_and_args: any[]): void {
+  warn(context: string, ...message_and_args: any[]): void {
     if (this.isWarnEnabled()) {
-      this.printFormat(console.warn, "WARN", message_and_args);
+      this.printFormat(console.warn, context, "WARN", message_and_args);
     }
   }
 
@@ -227,9 +263,9 @@ export class Logger {
    *   string message followed by positional arguments or a single element
    *   consisting of an object to debug (such as a caught `Error`).
    */
-  info(...message_and_args: any[]): void {
+  info(context: string, ...message_and_args: any[]): void {
     if (this.isInfoEnabled()) {
-      this.printFormat(console.info, "INFO", message_and_args);
+      this.printFormat(console.info, context, "INFO", message_and_args);
     }
   }
 
@@ -241,9 +277,9 @@ export class Logger {
    *   string message followed by positional arguments or a single element
    *   consisting of an object to debug (such as a caught `Error`).
    */
-  debug(...message_and_args: any[]): void {
+  debug(context: string, ...message_and_args: any[]): void {
     if (this.isDebugEnabled()) {
-      this.printFormat(console.debug, "DEBUG", message_and_args);
+      this.printFormat(console.debug, context, "DEBUG", message_and_args);
     }
   }
 
@@ -258,9 +294,9 @@ export class Logger {
    *   string message followed by positional arguments or a single element
    *   consisting of an object to debug (such as a caught `Error`).
    */
-  trace(...message_and_args: any[]): void {
+  trace(context: string, ...message_and_args: any[]): void {
     if (this.isTraceEnabled()) {
-      this.printFormat(console.debug, "TRACE", message_and_args);
+      this.printFormat(console.debug, context, "TRACE", message_and_args);
     }
   }
 }

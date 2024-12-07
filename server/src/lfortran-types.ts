@@ -5,11 +5,11 @@ export interface LFortranSettings {
   maxNumberOfProblems: number;
   compiler: {
     lfortranPath: string;
-    exclusiveFilter: boolean;
   };
   log: {
     level: string;
     benchmark: boolean;
+    filter: string;
   };
 }
 

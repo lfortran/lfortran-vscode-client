@@ -63,12 +63,6 @@
           "default": "lfortran",
           "description": "The path to the LFortran compiler executable."
         },
-        "LFortranLanguageServer.compiler.exclusiveFilter": {
-          "scope": "resource",
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to filter trace- and benchmark-related statements to the LFortran accessor."
-        },
         "LFortranLanguageServer.log.level": {
           "scope": "resource",
           "type": "string",
@@ -90,6 +84,12 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to benchmark event handlers and related operations."
+        },
+        "LFortranLanguageServer.log.filter": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "Regular expression for filtering log messages."
         }
       }
     }

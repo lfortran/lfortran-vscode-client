@@ -21,19 +21,19 @@ export class MovingStats {
     return this.variance;
   }
 
-  public getMax(): number {
-    return this.max;
+  public getStdDev(): number {
+    if (this.variance != 0.0) {
+      return Math.sqrt(this.variance);
+    }
+    return 0.0;
   }
 
   public getMin(): number {
     return this.min;
   }
 
-  public getStdDev(): number {
-    if (this.variance != 0.0) {
-      return Math.sqrt(this.variance);
-    }
-    return 0.0;
+  public getMax(): number {
+    return this.max;
   }
 
   observe(value: number): void {
@@ -43,10 +43,10 @@ export class MovingStats {
       let variance: number = this.variance;
 
       const p1: number = value - mean;
-      mean += p1 / numSamples;
+      mean += (p1 / numSamples);
 
       const p2: number = value - mean;
-      variance += (p1 * p2 - variance) / numSamples;
+      variance += (((p1 * p2) - variance) / numSamples);
 
       this.mean = mean;
       this.variance = variance;

@@ -71,6 +71,7 @@ export interface LFortranAccessor {
  * Interacts with LFortran through its escapedCommand-line interface.
  */
 export class LFortranCLIAccessor implements LFortranAccessor {
+  static LOG_CONTEXT: string = "LFortranCLIAccessor";
 
   // File handle representing the temporary file used to pass document text to
   // LFortran.
@@ -83,7 +84,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   private cleanUpHandler: () => void;
 
   constructor(logger: Logger) {
-    const fnid: string = "LFortranCLIAccessor(...)";
+    const fnid: string = "constructor(...)";
     const start: number = performance.now();
 
     this.logger = logger;
@@ -94,24 +95,37 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     process.on("SIGINT", this.cleanUpHandler);
     process.on("uncaughtException", this.cleanUpHandler);
 
-    logger.benchmark(fnid, start);
-    if (logger.isTraceEnabled()) {
-      logger.debug([fnid, [logger]]);
+    this.benchmarkAndTrace(fnid, start, [logger]);
+  }
+
+  benchmarkAndTrace(fnid: string, start: number, params: any[], retval?: any): void {
+    this.logger.benchmark(LFortranCLIAccessor.LOG_CONTEXT, fnid, start);
+    if (this.logger.isTraceEnabled()) {
+      this.logger.debug(LFortranCLIAccessor.LOG_CONTEXT, [
+        `[${LFortranCLIAccessor.LOG_CONTEXT}][TRACE] ${fnid}`,
+        params, retval
+      ]);
     }
   }
 
   cleanUp(...args: any[]): void {
-    const fnid: string = "LFortranCLIAccessor.cleanUp(...)";
+    const fnid: string = "cleanUp(...)";
     const start: number = performance.now();
 
     try {
       if (fs.existsSync(this.tmpFile.name)) {
         try {
-          this.logger.debug("Deleting temporary file: %s", this.tmpFile.name);
+          this.logger.debug(
+            LFortranCLIAccessor.LOG_CONTEXT,
+            "Deleting temporary file: %s",
+            this.tmpFile.name);
           this.tmpFile.removeCallback();
         } catch (error: any) {
-          this.logger.error("Failed to delete temporary file: %s", this.tmpFile.name);
-          this.logger.error(error);
+          this.logger.error(
+            LFortranCLIAccessor.LOG_CONTEXT,
+            "Failed to delete temporary file: %s",
+            this.tmpFile.name);
+          this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
         }
       }
     } finally {
@@ -120,14 +134,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       process.removeListener("exit", this.cleanUpHandler);
     }
 
-    this.logger.benchmark(fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      this.logger.debug([fnid, args]);
-    }
+    this.benchmarkAndTrace(fnid, start, args);
   }
 
   async checkPathExistsAndIsExecutable(path: string): Promise<boolean> {
-    const fnid: string = "LFortranCLIAccessor.checkPathExistsAndIsExecutable(...)";
+    const fnid: string = "checkPathExistsAndIsExecutable(...)";
     const start: number = performance.now();
 
     let pathExistsAndIsExecutable: boolean = false;
@@ -142,16 +153,12 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
     }
 
-    this.logger.benchmark(fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      console.debug([fnid, [path], pathExistsAndIsExecutable]);
-    }
-
+    this.benchmarkAndTrace(fnid, start, [path], pathExistsAndIsExecutable);
     return pathExistsAndIsExecutable;
   }
 
   /**
-   * Invokes LFortran through its escapedCommand-line interface with the given
+   * Invokes LFortran through its command-line interface with the given
    * settings, flags, and document text.
    */
   async runCompiler(settings: LFortranSettings,
@@ -159,7 +166,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
                     text: string,
                     defaultValue: string = "",
                     noResponseIsSuccess: boolean = false): Promise<string> {
-    const fnid: string = "LFortranCLIAccessor.runCompiler(...)";
+    const fnid: string = "runCompiler(...)";
     const start: number = performance.now();
 
     let output: string = defaultValue;
@@ -170,11 +177,15 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       let lfortranPath: string | null = settings.compiler.lfortranPath;
       if (lfortranPath === "lfortran" || !(await this.checkPathExistsAndIsExecutable(lfortranPath))) {
         lfortranPath = await which("lfortran", { nothrow: true });
-        this.logger.debug("lfortranPath = %s", lfortranPath);
+        this.logger.debug(
+          LFortranCLIAccessor.LOG_CONTEXT,
+          "lfortranPath = %s",
+          lfortranPath);
       }
 
       if (lfortranPath === null) {
         this.logger.error(
+          LFortranCLIAccessor.LOG_CONTEXT,
           "Failed to locate lfortran, please specify its path in the configuration.");
         return output;
       }
@@ -182,10 +193,16 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       try {
         try {
           fs.accessSync(lfortranPath, fs.constants.X_OK);
-          this.logger.debug("[%s] is executable", lfortranPath);
+          this.logger.debug(
+            LFortranCLIAccessor.LOG_CONTEXT,
+            "[%s] is executable",
+            lfortranPath);
         } catch (err) {
-          this.logger.error("[%s] is NOT executable", lfortranPath);
-          this.logger.error(err);
+          this.logger.error(
+            LFortranCLIAccessor.LOG_CONTEXT,
+            "[%s] is NOT executable",
+            lfortranPath);
+          this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, err);
         }
 
         params = params.concat([this.tmpFile.name]);
@@ -202,43 +219,52 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           stdio: "pipe"
         });
 
-        this.logger.benchmark(escapedCommand, commandStart);
+        this.logger.benchmark(
+          LFortranCLIAccessor.LOG_CONTEXT,
+          escapedCommand,
+          commandStart);
 
         if (response.error) {
           if (response.stderr) {
             output = response.stderr.toString();
           } else {
-            this.logger.error("Failed to get stderr from lfortran");
+            this.logger.error(
+              LFortranCLIAccessor.LOG_CONTEXT,
+              "Failed to get stderr from lfortran");
           }
         } else {
           if (response.stdout) {
             output = response.stdout.toString();
           } else if (!noResponseIsSuccess) {
-            this.logger.error("Failed to get stdout from lfortran");
+            this.logger.error(
+              LFortranCLIAccessor.LOG_CONTEXT,
+              "Failed to get stdout from lfortran");
           } else {
-            this.logger.debug("lfortran responded successfully with an empty string.");
+            this.logger.debug(
+              LFortranCLIAccessor.LOG_CONTEXT,
+              "lfortran responded successfully with an empty string.");
           }
         }
       } catch (compileError: any) {
         output = compileError.stdout;
         if (compileError.signal !== null) {
-          this.logger.error("Compilation failed.");
+          this.logger.error(
+            LFortranCLIAccessor.LOG_CONTEXT,
+            "Compilation failed.");
         }
         throw compileError;
       }
     } catch (error: any) {
-      this.logger.error(error);
+      this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmark(fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      console.debug(
-        [fnid,
-         [settings, params, text, defaultValue, noResponseIsSuccess],
-         output
-        ]
-      );
-    }
+    this.benchmarkAndTrace(fnid, start, [
+      settings,
+      params,
+      text,
+      defaultValue,
+      noResponseIsSuccess,
+    ], output);
 
     return output;
   }
@@ -246,7 +272,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   async showDocumentSymbols(uri: string,
                             text: string,
                             settings: LFortranSettings): Promise<SymbolInformation[]> {
-    const fnid: string = "LFortranCLIAccessor.showDocumentSymbols(...)";
+    const fnid: string = "showDocumentSymbols(...)";
     const start: number = performance.now();
 
     const flags = ["--show-document-symbols"];
@@ -257,8 +283,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     try {
       symbols = JSON.parse(stdout);
     } catch (error) {
-      this.logger.warn("Failed to parse response: %s", stdout);
-      this.logger.warn(error);
+      this.logger.warn(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        "Failed to parse response: %s",
+        stdout);
+      this.logger.warn(LFortranCLIAccessor.LOG_CONTEXT, error);
       symbols = [];
     }
 
@@ -279,11 +308,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
     }
 
-    this.logger.benchmark(fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      console.debug([fnid, [uri, text, settings], symbols]);
-    }
-
+    this.benchmarkAndTrace(fnid, start, [uri, text, settings], symbols);
     return symbols;
   }
 
@@ -292,7 +317,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
                    line: number,
                    column: number,
                    settings: LFortranSettings): Promise<DefinitionLink[]> {
-    const fnid: string = "LFortranCLIAccessor.lookupName(...)";
+    const fnid: string = "lookupName(...)";
     const start: number = performance.now();
 
     const definitions: DefinitionLink[] = [];
@@ -326,14 +351,20 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         }
       }
     } catch (error: any) {
-      this.logger.error("Failed to lookup name at line=%d, column=%d", line, column);
-      this.logger.error(error);
+      this.logger.error(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        "Failed to lookup name at line=%d, column=%d",
+        line, column);
+      this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmark(fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      console.debug([fnid, [uri, text, line, column, settings], definitions]);
-    }
+    this.benchmarkAndTrace(fnid, start, [
+      uri,
+      text,
+      line,
+      column,
+      settings,
+    ], definitions);
 
     return definitions;
   }
@@ -341,7 +372,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   async showErrors(uri: string,
                    text: string,
                    settings: LFortranSettings): Promise<Diagnostic[]> {
-    const fnid: string = "LFortranCLIAccessor.showErrors(...)";
+    const fnid: string = "showErrors(...)";
     const start: number = performance.now();
 
     const diagnostics: Diagnostic[] = [];
@@ -358,13 +389,19 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           // FIXME: Remove this repair logic once the respective bug has been
           // fixed (lfortran/lfortran issue #5525)
           // ----------------------------------------------------------------
-          this.logger.warn("Failed to parse response, attempting to repair and re-parse it.");
+          this.logger.warn(
+            LFortranCLIAccessor.LOG_CONTEXT,
+            "Failed to parse response, attempting to repair and re-parse it.");
           const repaired: string = stdout.substring(0, 28) + "{" + stdout.substring(28);
           try {
             results = JSON.parse(repaired);
-            this.logger.log("Repair succeeded, see: https://github.com/lfortran/lfortran/issues/5525");
+            this.logger.log(
+              LFortranCLIAccessor.LOG_CONTEXT,
+              "Repair succeeded, see: https://github.com/lfortran/lfortran/issues/5525");
           } catch {
-            this.logger.error("Failed to repair response");
+            this.logger.error(
+              LFortranCLIAccessor.LOG_CONTEXT,
+              "Failed to repair response");
             throw error;
           }
         }
@@ -379,18 +416,19 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         }
       }
     } catch (error: any) {
-      this.logger.error("Failed to show errors");
+      this.logger.error(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        "Failed to show errors");
       if (stdout !== null) {
-        this.logger.error("Failed to parse response: %s", stdout);
+        this.logger.error(
+          LFortranCLIAccessor.LOG_CONTEXT,
+          "Failed to parse response: %s",
+          stdout);
       }
-      this.logger.error(error);
+      this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmark(fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      console.debug([fnid, [uri, text, settings], diagnostics]);
-    }
-
+    this.benchmarkAndTrace(fnid, start, [uri, text, settings], diagnostics);
     return diagnostics;
   }
 
@@ -400,7 +438,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
                      column: number,
                      newName: string,
                      settings: LFortranSettings): Promise<TextEdit[]> {
-    const fnid: string = "LFortranCLIAccessor.renameSymbol(...)";
+    const fnid: string = "renameSymbol(...)";
     const start: number = performance.now();
 
     const edits: TextEdit[] = [];
@@ -432,14 +470,21 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         }
       }
     } catch (error: any) {
-      this.logger.error("Failed to rename symbol at line=%d, column=%d", line, column);
-      this.logger.error(error);
+      this.logger.error(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        "Failed to rename symbol at line=%d, column=%d",
+        line, column);
+      this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmark(fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      console.debug([fnid, [uri, text, line, column, newName, settings], edits]);
-    }
+    this.benchmarkAndTrace(fnid, start, [
+      uri,
+      text,
+      line,
+      column,
+      newName,
+      settings
+    ], edits);
 
     return edits;
   }

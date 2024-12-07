@@ -52,17 +52,19 @@ const defaultSettings: LFortranSettings = {
   maxNumberOfProblems: 100,
   compiler: {
     lfortranPath: "lfortran",
-    exclusiveFilter: false,
   },
   log: {
     level: "info",
     benchmark: false,
+    filter: "",
   },
 };
 
 const RE_IDENTIFIABLE: RegExp = /^[a-zA-Z0-9_]$/;
 
 export class LFortranLanguageServer {
+  static LOG_CONTEXT: string = "LFortranLanguageServer";
+
   public lfortran: LFortranAccessor;
   public connection: _Connection;
   public documents: TextDocuments<TextDocument>;
@@ -84,7 +86,7 @@ export class LFortranLanguageServer {
               documents: TextDocuments<TextDocument>,
               logger: Logger,
               settings: LFortranSettings = defaultSettings) {
-    const fnid: string = "LFortranLanguageServer(...)";
+    const fnid: string = "constructor(...)";
     const start: number = performance.now();
 
     this.lfortran = lfortran;
@@ -94,16 +96,27 @@ export class LFortranLanguageServer {
     this.settings = settings;
 
     logger.configure(settings);
-    if (!settings.compiler.exclusiveFilter) {
-      logger.benchmark(fnid, start);
-      if (logger.isTraceEnabled()) {
-        logger.debug([fnid, [lfortran, connection, documents, logger, settings]]);
-      }
+    this.benchmarkAndTrace(fnid, start, [
+      lfortran,
+      connection,
+      documents,
+      logger,
+      settings
+    ]);
+  }
+
+  benchmarkAndTrace(fnid: string, start: number, params: any[], retval?: any): void {
+    this.logger.benchmark(LFortranLanguageServer.LOG_CONTEXT, fnid, start);
+    if (this.logger.isTraceEnabled()) {
+      this.logger.debug(LFortranLanguageServer.LOG_CONTEXT, [
+        `[${LFortranLanguageServer.LOG_CONTEXT}][TRACE] ${fnid}`,
+        params, retval
+      ]);
     }
   }
 
   onInitialize(params: InitializeParams): InitializeResult {
-    const fnid: string = "LFortranLanguageServer.onInitialize(...)";
+    const fnid: string = "onInitialize(...)";
     const start: number = performance.now();
 
     const capabilities = params.capabilities;
@@ -144,19 +157,13 @@ export class LFortranLanguageServer {
       };
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [params], result]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [params], result);
     return result;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onInitialized(params: InitializedParams): void {
-    const fnid: string = "LFortranLanguageServer.onInitialized(...)";
+    const fnid: string = "onInitialized(...)";
     const start: number = performance.now();
 
     if (this.hasConfigurationCapability) {
@@ -165,16 +172,11 @@ export class LFortranLanguageServer {
         .register(DidChangeConfigurationNotification.type, undefined);
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [params]]);
-      }
-    }
+    this.benchmarkAndTrace(fnid, start, [params]);
   }
 
   extractDefinition(location: Location): string | null {
-    const fnid: string = "LFortranLanguageServer.extractDefinition(...)";
+    const fnid: string = "extractDefinition(...)";
     const start: number = performance.now();
     let definition: string | null = null;
     const document = this.documents.get(location.uri);
@@ -235,18 +237,12 @@ export class LFortranLanguageServer {
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [location], definition]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [location], definition);
     return definition;
   }
 
   index(uri: string, symbols: SymbolInformation[]): void {
-    const fnid: string = "LFortranLanguageServer.index(...)";
+    const fnid: string = "index(...)";
     const start: number = performance.now();
 
     // (symbols.length == 0) => error with document, but we still need to
@@ -272,16 +268,11 @@ export class LFortranLanguageServer {
     const dictionary = PrefixTrie.from(terms, values);
     this.dictionaries.set(uri, dictionary);
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [uri, symbols]]);
-      }
-    }
+    this.benchmarkAndTrace(fnid, start, [uri, symbols]);
   }
 
   async onDocumentSymbol(request: DocumentSymbolParams): Promise<SymbolInformation[] | null> {
-    const fnid: string = "LFortranLanguageServer.onDocumentSymbol(...)";
+    const fnid: string = "onDocumentSymbol(...)";
     const start: number = performance.now();
 
     let symbols: SymbolInformation[] | null = null;
@@ -300,18 +291,12 @@ export class LFortranLanguageServer {
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [request], symbols]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [request], symbols);
     return symbols;
   }
 
   async onDefinition(request: DefinitionParams): Promise<DefinitionLink[] | null> {
-    const fnid: string = "LFortranLanguageServer.onDefinition(...)";
+    const fnid: string = "onDefinition(...)";
     const start: number = performance.now();
 
     let definitions: DefinitionLink[] | null = null;
@@ -327,18 +312,12 @@ export class LFortranLanguageServer {
         await this.lfortran.lookupName(uri, text, line, column, this.settings);
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [request], definitions]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [request], definitions);
     return definitions;
   }
 
   onDidChangeConfiguration(change: DidChangeConfigurationParams): void {
-    const fnid: string = "LFortranLanguageServer.onDidChangeConfiguration(...)";
+    const fnid: string = "onDidChangeConfiguration(...)";
     const start: number = performance.now();
 
     if (this.hasConfigurationCapability) {
@@ -354,25 +333,15 @@ export class LFortranLanguageServer {
     // Revalidate all open text documents
     this.documents.all().forEach(this.validateTextDocument.bind(this));
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [change]]);
-      }
-    }
+    this.benchmarkAndTrace(fnid, start, [change]);
   }
 
   getDocumentSettings(uri: string): Thenable<LFortranSettings> {
-    const fnid: string = "LFortranLanguageServer.getDocumentSettings(...)";
+    const fnid: string = "getDocumentSettings(...)";
     const start: number = performance.now();
 
     if (!this.hasConfigurationCapability) {
-      if (!this.settings.compiler.exclusiveFilter) {
-        this.logger.benchmark(fnid, start);
-        if (this.logger.isTraceEnabled()) {
-          this.logger.debug([fnid, [uri], this.settings]);
-        }
-      }
+      this.benchmarkAndTrace(fnid, start, [uri], this.settings);
       return Promise.resolve(this.settings);
     }
 
@@ -387,47 +356,31 @@ export class LFortranLanguageServer {
       this.documentSettings.set(uri, settings);
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [uri], settings]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [uri], settings);
     return settings;
   }
 
   // Only keep settings for open documents
   onDidClose(event: TextDocumentChangeEvent<TextDocument>): void {
-    const fnid: string = "LFortranLanguageServer.onDidClose(...)";
+    const fnid: string = "onDidClose(...)";
     const start: number = performance.now();
 
     this.documentSettings.delete(event.document.uri);
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [event]]);
-      }
-    }
+    this.benchmarkAndTrace(fnid, start, [event]);
   }
 
   onDidChangeContent(event: TextDocumentChangeEvent<TextDocument>): void {
-    const fnid: string = "LFortranLanguageServer.onDidChangeContent(...)";
+    const fnid: string = "onDidChangeContent(...)";
     const start: number = performance.now();
 
     this.validateTextDocument(event.document);
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [event]]);
-      }
-    }
+    this.benchmarkAndTrace(fnid, start, [event]);
   }
 
   async validateTextDocument(textDocument: TextDocument): Promise<void> {
-    const fnid: string = "LFortranLanguageServer.validateTextDocument(...)";
+    const fnid: string = "validateTextDocument(...)";
     const start: number = performance.now();
 
     if (this.hasDiagnosticRelatedInformationCapability) {
@@ -440,19 +393,16 @@ export class LFortranLanguageServer {
       // Send the computed diagnostics to VSCode.
       this.connection.sendDiagnostics({ uri: uri, diagnostics });
     } else {
-      this.logger.error('Cannot validate a document with no diagnostic capability');
+      this.logger.error(
+        LFortranLanguageServer.LOG_CONTEXT,
+        'Cannot validate a document with no diagnostic capability');
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [textDocument]]);
-      }
-    }
+    this.benchmarkAndTrace(fnid, start, [textDocument]);
   }
 
   extractQuery(text: string, line: number, column: number): string | null {
-    const fnid: string = "LFortranLanguageServer.extractQuery(...)";
+    const fnid: string = "extractQuery(...)";
     const start: number = performance.now();
 
     let query: string | null = null;
@@ -493,18 +443,12 @@ export class LFortranLanguageServer {
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [text, line, column], query]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [text, line, column], query);
     return query;
   }
 
   onCompletion(documentPosition: TextDocumentPositionParams): CompletionItem[] | CompletionList | null {
-    const fnid: string = "LFortranLanguageServer.onCompletion(...)";
+    const fnid: string = "onCompletion(...)";
     const start: number = performance.now();
 
     let completions: CompletionItem[] | null = null;
@@ -522,32 +466,19 @@ export class LFortranLanguageServer {
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [documentPosition], completions]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [documentPosition], completions);
     return completions;
   }
 
   onCompletionResolve(item: CompletionItem): CompletionItem {
-    const fnid: string = "LFortranLanguageServer.onCompletionResolve(...)";
+    const fnid: string = "onCompletionResolve(...)";
     const start: number = performance.now();
-
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [item], item]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [item], item);
     return item;
   }
 
   onHover(params: HoverParams): Hover | null {
-    const fnid: string = "LFortranLanguageServer.onHover(...)";
+    const fnid: string = "onHover(...)";
     const start: number = performance.now();
 
     let hover: Hover | null = null;
@@ -575,18 +506,12 @@ export class LFortranLanguageServer {
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [params], hover]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [params], hover);
     return hover;
   }
 
   highlightSymbol(text: string, symbol: string): Range[] {
-    const fnid: string = "LFortranLanguageServer.highlightSymbol(...)";
+    const fnid: string = "highlightSymbol(...)";
     const start: number = performance.now();
 
     // case-insensitive search
@@ -656,18 +581,12 @@ export class LFortranLanguageServer {
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [text, symbol], highlights]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [text, symbol], highlights);
     return highlights;
   }
 
   renameSymbol(text: string, symbol: string, newName: string): TextEdit[] {
-    const fnid: string = "LFortranLanguageServer.renameSymbol(...)";
+    const fnid: string = "renameSymbol(...)";
     const start: number = performance.now();
 
     const edits: TextEdit[] = this.highlightSymbol(text, symbol).map(range => ({
@@ -675,18 +594,12 @@ export class LFortranLanguageServer {
       newText: newName,
     }));
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [text, symbol, newName], edits]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [text, symbol, newName], edits);
     return edits;
   }
 
   async onRenameRequest(params: RenameParams): Promise<WorkspaceEdit | null> {
-    const fnid: string = "LFortranLanguageServer.onRenameRequest(...)";
+    const fnid: string = "onRenameRequest(...)";
     const start: number = performance.now();
 
     let workspaceEdit: WorkspaceEdit | null = null;
@@ -720,23 +633,20 @@ export class LFortranLanguageServer {
             },
           };
         } else {
-          this.logger.warn('Cannot find symbol to rename: "%s"', query);
+          this.logger.warn(
+            LFortranLanguageServer.LFortranLanguageServer.LOG_CONTEXT,
+            'Cannot find symbol to rename: "%s"',
+            query);
         }
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [params], workspaceEdit]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [params], workspaceEdit);
     return workspaceEdit;
   }
 
   async onDocumentHighlight(params: DocumentHighlightParams): Promise<DocumentHighlight[] | null> {
-    const fnid: string = "LFortranLanguageServer.onDocumentHighlight(...)";
+    const fnid: string = "onDocumentHighlight(...)";
     const start: number = performance.now();
 
     let highlights: DocumentHighlight[] | null = null;
@@ -754,18 +664,16 @@ export class LFortranLanguageServer {
             range: range,
           }));
         } else {
-          this.logger.warn('Cannot find symbol to highlight: "%s"', query);
+          this.logger.warn(
+            LFortranLanguageServer.LOG_CONTEXT,
+            'Cannot find symbol to highlight: "%s"',
+            query);
         }
       }
     }
 
-    if (!this.settings.compiler.exclusiveFilter) {
-      this.logger.benchmark(fnid, start);
-      if (this.logger.isTraceEnabled()) {
-        this.logger.debug([fnid, [params], highlights]);
-      }
-    }
-
+    this.benchmarkAndTrace(fnid, start, [params], highlights);
     return highlights;
   }
 }
+
