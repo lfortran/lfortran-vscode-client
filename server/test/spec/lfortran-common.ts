@@ -9,5 +9,7 @@ export const settings: LFortranSettings = {
     level: "off",
     benchmark: false,
     filter: "",
+    prettyPrint: false,
+    indentSize: 0,
   },
 };

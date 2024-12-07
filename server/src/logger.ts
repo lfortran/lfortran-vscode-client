@@ -34,6 +34,10 @@ export class Logger {
 
   public filter: RegExp = /(?:)/;
 
+  public prettyPrint: boolean = true;
+
+  public indentSize: number = 2;
+
   private stats: Map<string, MovingStats> = new Map();
 
   /**
@@ -49,6 +53,8 @@ export class Logger {
     this.level = logLevelFromName(settings.log.level);
     this.enableBenchmark = settings.log.benchmark;
     this.filter = new RegExp(settings.log.filter);
+    this.prettyPrint = settings.log.prettyPrint;
+    this.indentSize = settings.log.indentSize;
   }
 
   includeString(value: string): boolean {
@@ -297,6 +303,23 @@ export class Logger {
   trace(context: string, ...message_and_args: any[]): void {
     if (this.isTraceEnabled()) {
       this.printFormat(console.debug, context, "TRACE", message_and_args);
+    }
+  }
+
+  benchmarkAndTrace(context: string,
+                    fnid: string,
+                    start: number,
+                    params: any[],
+                    retval?: any): void {
+    this.benchmark(context, fnid, start);
+    if (this.isTraceEnabled()) {
+      const indentSize = (this.prettyPrint) ? this.indentSize : undefined;
+      const stringified: string = JSON.stringify([
+        fnid,
+        params,
+        retval
+      ], undefined, indentSize);
+      this.debug(context, stringified);
     }
   }
 }

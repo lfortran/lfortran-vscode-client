@@ -10,6 +10,8 @@ export interface LFortranSettings {
     level: string;
     benchmark: boolean;
     filter: string;
+    prettyPrint: boolean;
+    indentSize: number;
   };
 }
 

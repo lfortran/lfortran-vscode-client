@@ -90,6 +90,18 @@
           "type": "string",
           "default": "",
           "description": "Regular expression for filtering log messages."
+        },
+        "LFortranLanguageServer.log.prettyPrint": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to pretty-print JSON objects and arrays."
+        },
+        "LFortranLanguageServer.log.indentSize": {
+          "scope": "resource",
+          "type": "number",
+          "default": 2,
+          "description": "Number of spaces to indent the pretty-printed JSON."
         }
       }
     }

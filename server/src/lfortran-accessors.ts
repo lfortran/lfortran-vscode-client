@@ -95,17 +95,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     process.on("SIGINT", this.cleanUpHandler);
     process.on("uncaughtException", this.cleanUpHandler);
 
-    this.benchmarkAndTrace(fnid, start, [logger]);
-  }
-
-  benchmarkAndTrace(fnid: string, start: number, params: any[], retval?: any): void {
-    this.logger.benchmark(LFortranCLIAccessor.LOG_CONTEXT, fnid, start);
-    if (this.logger.isTraceEnabled()) {
-      this.logger.debug(LFortranCLIAccessor.LOG_CONTEXT, [
-        `[${LFortranCLIAccessor.LOG_CONTEXT}][TRACE] ${fnid}`,
-        params, retval
-      ]);
-    }
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start,
+      [logger]
+    );
   }
 
   cleanUp(...args: any[]): void {
@@ -134,7 +128,10 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       process.removeListener("exit", this.cleanUpHandler);
     }
 
-    this.benchmarkAndTrace(fnid, start, args);
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start, args
+    );
   }
 
   async checkPathExistsAndIsExecutable(path: string): Promise<boolean> {
@@ -153,7 +150,12 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
     }
 
-    this.benchmarkAndTrace(fnid, start, [path], pathExistsAndIsExecutable);
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start,
+      [path],
+      pathExistsAndIsExecutable
+    );
     return pathExistsAndIsExecutable;
   }
 
@@ -221,8 +223,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
 
         this.logger.benchmark(
           LFortranCLIAccessor.LOG_CONTEXT,
-          escapedCommand,
-          commandStart);
+          escapedCommand as string,
+          commandStart as number);
 
         if (response.error) {
           if (response.stderr) {
@@ -258,13 +260,17 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.benchmarkAndTrace(fnid, start, [
-      settings,
-      params,
-      text,
-      defaultValue,
-      noResponseIsSuccess,
-    ], output);
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start, [
+        settings,
+        params,
+        text,
+        defaultValue,
+        noResponseIsSuccess,
+      ],
+      output
+    );
 
     return output;
   }
@@ -308,7 +314,12 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
     }
 
-    this.benchmarkAndTrace(fnid, start, [uri, text, settings], symbols);
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start,
+      [uri, text, settings],
+      symbols
+    );
     return symbols;
   }
 
@@ -358,13 +369,17 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.benchmarkAndTrace(fnid, start, [
-      uri,
-      text,
-      line,
-      column,
-      settings,
-    ], definitions);
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start, [
+        uri,
+        text,
+        line,
+        column,
+        settings,
+      ],
+      definitions
+    );
 
     return definitions;
   }
@@ -428,7 +443,12 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.benchmarkAndTrace(fnid, start, [uri, text, settings], diagnostics);
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start,
+      [uri, text, settings],
+      diagnostics
+    );
     return diagnostics;
   }
 
@@ -477,14 +497,18 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.benchmarkAndTrace(fnid, start, [
-      uri,
-      text,
-      line,
-      column,
-      newName,
-      settings
-    ], edits);
+    this.logger.benchmarkAndTrace(
+      LFortranCLIAccessor.LOG_CONTEXT,
+      fnid, start, [
+        uri,
+        text,
+        line,
+        column,
+        newName,
+        settings
+      ],
+      edits
+    );
 
     return edits;
   }
