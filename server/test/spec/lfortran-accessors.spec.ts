@@ -10,6 +10,8 @@ import {
 
 import { LFortranCLIAccessor } from "../../src/lfortran-accessors";
 
+import { Logger } from "../../src/logger";
+
 import { settings } from "./lfortran-common";
 
 import { assert } from "chai";
@@ -19,12 +21,14 @@ import "mocha";
 import * as sinon from 'sinon';
 
 describe("LFortranCLIAccessor", () => {
+  let logger: Logger;
   let lfortran: LFortranCLIAccessor;
 
   const uri: string = __filename;
 
   beforeEach(() => {
-    lfortran = new LFortranCLIAccessor();
+    logger = new Logger(settings);
+    lfortran = new LFortranCLIAccessor(logger);
   });
 
   afterEach(() => {
