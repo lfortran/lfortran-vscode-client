@@ -5,6 +5,7 @@
 !*/
 
 # Include specific file patterns
+!/_config.yml
 !/.gitignore
 !/README.md
 !/videos/*.gif
