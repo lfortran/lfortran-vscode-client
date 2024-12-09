@@ -10,6 +10,7 @@
 !/client/testFixture/*.txt
 !/client/test/spec/**/*.ts
 !/client/tsconfig.json
+!/_config.yml
 !/esbuild.js
 !/eslint.config.mjs
 !/.github/workflows/*.yaml
