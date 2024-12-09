@@ -217,36 +217,36 @@ root, run the following command: `xvfb-run npm run integ`:
 The first step when debugging is to examine the respective logs. This extension
 has solid support for logging at various levels, including inputs and outputs to
 functions and benchmarks. What is logged is configurable in the following ways:
-- Log level := Granularity of logs to print. ![Log Level](https://lfortran.github.io/lfortran-lsp/images/log-level-configuration-lfortran-lsp.png)
-  - `off` := Do not print any logs.
-  - `fatal` := Only log messages about errors that cannot be recovered from.
-  - `error` := Log errors that prevent functionality but can be recovered from.
-  - `warn` := Log errors that can be recovered from with default behavior.
-  - `info` := Log informational messages that are demonstrate the extension is running correctly. These may be helpful to non-developer users.
-  - `debug` := Log additional information that is useful for debugging, but not to the level of recording inputs and outputs of functions.
-  - `trace` := Highest granularity of logging that includes such things as inputs and outputs to functions.
-  - `all` := Show all the logs. This is currently equivalent to `trace`.
-- Log filter := Regular expression used to narrow which messages are logged. If
-  you are not familiar with regular expressions, you may treat the respective
-  field as a plain text field, for the most part. There are some symbols to
-  hold special significance to regular expressions; be especially mindful of
-  periods, asterisks, plus signs, parentheses, brackets, and braces. To learn
-  more about regular expressions, I recommend
-  [regular-expressions.info](https://www.regular-expressions.info/javascript.html)
-  or the
-  [Mozilla documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions).
-  ![Log Filter](https://lfortran.github.io/lfortran-lsp/images/log-filter-configuration-lfortran-lsp.png)
-- Benchmarking := Logs the number of milliseconds required to complete an
-  operation along with some (moving) summary statistics. The summary statistics
-  include the mean, standard deviation, minimum, and maximum execution times.
-  The moving statistics are computed using
-  [Welford's online algorithm](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm).
-  ![Benchmarking](https://lfortran.github.io/lfortran-lsp/images/benchmark-configuration-lfortran-lsp.png)
-- Pretty-printing := Whether to indent each array element and object field
-  relative to its nested level in a manner that makes them easy to examine and
-  understand. This includes the size of each indentation level (the number of
-  spaces to add per level of indentation).
-  ![Pretty-Print](https://lfortran.github.io/lfortran-lsp/images/pretty-print-configuration-lfortran-lsp.png)
-  ![Indent Size](https://lfortran.github.io/lfortran-lsp/images/indent-size-configuration-lfortran-lsp.png)
+1. Log level := Granularity of logs to print. ![Log Level](https://dylon.github.io/lfortran-lsp/images/log-level-configuration-lfortran-lsp.png)
+   - `off` := Do not print any logs.
+   - `fatal` := Only log messages about errors that cannot be recovered from.
+   - `error` := Log errors that prevent functionality but can be recovered from.
+   - `warn` := Log errors that can be recovered from with default behavior.
+   - `info` := Log informational messages that are demonstrate the extension is running correctly. These may be helpful to non-developer users.
+   - `debug` := Log additional information that is useful for debugging, but not to the level of recording inputs and outputs of functions.
+   - `trace` := Highest granularity of logging that includes such things as inputs and outputs to functions.
+   - `all` := Show all the logs. This is currently equivalent to `trace`.
+2. Log filter := Regular expression used to narrow which messages are logged. If
+   you are not familiar with regular expressions, you may treat the respective
+   field as a plain text field, for the most part. There are some symbols to
+   hold special significance to regular expressions; be especially mindful of
+   periods, asterisks, plus signs, parentheses, brackets, and braces. To learn
+   more about regular expressions, I recommend
+   [regular-expressions.info](https://www.regular-expressions.info/javascript.html)
+   or the
+   [Mozilla documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions).
+   ![Log Filter](https://dylon.github.io/lfortran-lsp/images/log-filter-configuration-lfortran-lsp.png)
+3. Benchmarking := Logs the number of milliseconds required to complete an
+   operation along with some (moving) summary statistics. The summary statistics
+   include the mean, standard deviation, minimum, and maximum execution times.
+   The moving statistics are computed using
+   [Welford's online algorithm](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm).
+   ![Benchmarking](https://dylon.github.io/lfortran-lsp/images/benchmark-configuration-lfortran-lsp.png)
+4. Pretty-printing := Whether to indent each array element and object field
+   relative to its nested level in a manner that makes them easy to examine and
+   understand. This includes the size of each indentation level (the number of
+   spaces to add per level of indentation).
+   ![Pretty-Print](https://dylon.github.io/lfortran-lsp/images/pretty-print-configuration-lfortran-lsp.png)
+   ![Indent Size](https://dylon.github.io/lfortran-lsp/images/indent-size-configuration-lfortran-lsp.png)
 
 ![Configuring Logging](https://lfortran.github.io/lfortran-lsp/videos/configuring-logging-lfortran-lsp.gif)
