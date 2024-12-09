@@ -214,6 +214,8 @@ root, run the following command: `xvfb-run npm run integ`:
 
 ### Configuring logging
 
+![Configuring Logging](https://lfortran.github.io/lfortran-lsp/videos/configuring-logging-lfortran-lsp.gif)
+
 The first step when debugging is to examine the respective logs. This extension
 has solid support for logging at various levels, including inputs and outputs to
 functions and benchmarks. What is logged is configurable in the following ways:
@@ -248,5 +250,3 @@ functions and benchmarks. What is logged is configurable in the following ways:
    spaces to add per level of indentation).
    ![Pretty-Print](https://dylon.github.io/lfortran-lsp/images/pretty-print-configuration-lfortran-lsp.png)
    ![Indent Size](https://dylon.github.io/lfortran-lsp/images/indent-size-configuration-lfortran-lsp.png)
-
-![Configuring Logging](https://lfortran.github.io/lfortran-lsp/videos/configuring-logging-lfortran-lsp.gif)
