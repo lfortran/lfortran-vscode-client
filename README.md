@@ -219,21 +219,21 @@ has solid support for logging at various levels, including inputs and outputs to
 functions and benchmarks. What is logged is configurable in the following ways:
 1. Log level := Granularity of logs to print.
    <dl>
-     <dt>`off`</dt>
+     <dt>off</dt>
      <dd>Do not print any logs.</dd>
-     <dt>`fatal`</dt>
+     <dt>fatal</dt>
      <dd>Only log messages about errors that cannot be recovered from.</dd>
-     <dt>`error`</dt>
+     <dt>error</dt>
      <dd>Log errors that prevent functionality but can be recovered from.</dd>
-     <dt>`warn`</dt>
+     <dt>warn</dt>
      <dd>Log errors that can be recovered from with default behavior.</dd>
-     <dt>`info`</dt>
+     <dt>info</dt>
      <dd>Log informational messages that are demonstrate the extension is running correctly. These may be helpful to non-developer users.</dd>
-     <dt>`debug`</dt>
+     <dt>debug</dt>
      <dd>Log additional information that is useful for debugging, but not to the level of recording inputs and outputs of functions.</dd>
-     <dt>`trace`</dt>
+     <dt>trace</dt>
      <dd>Highest granularity of logging that includes such things as inputs and outputs to functions.</dd>
-     <dt>`all`</dt>
+     <dt>all</dt>
      <dd>Show all the logs. This is currently equivalent to `trace`.</dd>
    </dl>
 2. Log filter := Regular expression used to narrow which messages are logged. If
