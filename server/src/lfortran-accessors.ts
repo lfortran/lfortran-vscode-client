@@ -337,7 +337,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       const flags = [
         "--lookup-name",
         "--line=" + (line + 1),
-        "--column=" + (column + 1)
+        "--column=" + (column + 1),
+        "--continue-compilation"
       ];
       const stdout = await this.runCompiler(settings, flags, text, "[]");
       const results = JSON.parse(stdout);
@@ -393,7 +394,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     const diagnostics: Diagnostic[] = [];
     let stdout: string | null = null;
     try {
-      const flags = ["--show-errors"];
+      const flags = ["--show-errors", "--continue-compilation"];
       stdout =
         await this.runCompiler(settings, flags, text, "[]", true);
       if (stdout.length > 0) {
@@ -466,7 +467,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       const flags = [
         "--rename-symbol",
         "--line=" + (line + 1),
-        "--column=" + (column + 1)
+        "--column=" + (column + 1),
+        "--continue-compilation"
       ];
       const stdout = await this.runCompiler(settings, flags, text, "[]");
       const obj = JSON.parse(stdout);
