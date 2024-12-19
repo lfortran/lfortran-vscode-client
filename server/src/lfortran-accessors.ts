@@ -281,7 +281,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     const fnid: string = "showDocumentSymbols(...)";
     const start: number = performance.now();
 
-    const flags = ["--show-document-symbols"];
+    const flags = ["--show-document-symbols", "--continue-compilation"];
     const stdout = await this.runCompiler(settings, flags, text, "[]");
 
     let symbols: SymbolInformation[];
