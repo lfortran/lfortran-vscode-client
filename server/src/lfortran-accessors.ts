@@ -206,6 +206,12 @@ export class LFortranCLIAccessor implements LFortranAccessor {
             lfortranPath);
           this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, err);
         }
+        // executable-command
+        this.logger.info(
+          LFortranCLIAccessor.LOG_CONTEXT,
+          "Running lfortran with the following parameters: %s",
+          lfortranPath + " " + params.join(" ")
+        )
 
         params = params.concat([this.tmpFile.name]);
 
