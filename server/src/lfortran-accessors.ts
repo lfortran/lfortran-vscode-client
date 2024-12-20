@@ -84,7 +84,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   private cleanUpHandler: () => void;
 
   constructor(logger: Logger) {
-    const fnid: string = "constructor(...)";
+    const fnid: string = "constructor";
     const start: number = performance.now();
 
     this.logger = logger;
@@ -95,15 +95,19 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     process.on("SIGINT", this.cleanUpHandler);
     process.on("uncaughtException", this.cleanUpHandler);
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start,
-      [logger]
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "logger", logger,
+        ]
+      );
+    }
   }
 
   cleanUp(...args: any[]): void {
-    const fnid: string = "cleanUp(...)";
+    const fnid: string = "cleanUp";
     const start: number = performance.now();
 
     try {
@@ -128,14 +132,19 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       process.removeListener("exit", this.cleanUpHandler);
     }
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start, args
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "args", args,
+        ]
+      );
+    }
   }
 
   async checkPathExistsAndIsExecutable(path: string): Promise<boolean> {
-    const fnid: string = "checkPathExistsAndIsExecutable(...)";
+    const fnid: string = "checkPathExistsAndIsExecutable";
     const start: number = performance.now();
 
     let pathExistsAndIsExecutable: boolean = false;
@@ -150,12 +159,16 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
     }
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start,
-      [path],
-      pathExistsAndIsExecutable
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "path", path,
+        ],
+        pathExistsAndIsExecutable
+      );
+    }
     return pathExistsAndIsExecutable;
   }
 
@@ -168,7 +181,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
                     text: string,
                     defaultValue: string = "",
                     noResponseIsSuccess: boolean = false): Promise<string> {
-    const fnid: string = "runCompiler(...)";
+    const fnid: string = "runCompiler";
     const start: number = performance.now();
 
     let output: string = defaultValue;
@@ -211,7 +224,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
 
         let escapedCommand: string | undefined;
         let commandStart: number | undefined;
-        if (this.logger.isBenchmarkEnabled()) {
+        if (this.logger.isBenchmarkEnabled() || this.logger.isDebugEnabled()) {
           escapedCommand = shellescape([lfortranPath].concat(params));
           commandStart = performance.now();
         }
@@ -226,6 +239,19 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           escapedCommand as string,
           commandStart as number);
 
+        if (this.logger.isDebugEnabled()) {
+          this.logger.debug(
+            LFortranCLIAccessor.LOG_CONTEXT,
+            "`%s` yielded status=%s, signal=%s, response=%s",
+            escapedCommand, response.status, response.signal,
+            JSON.stringify(
+              response,
+              undefined,
+              this.logger.indentSize
+            )
+          );
+        }
+
         if (response.error) {
           if (response.stderr) {
             output = response.stderr.toString();
@@ -234,6 +260,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
               LFortranCLIAccessor.LOG_CONTEXT,
               "Failed to get stderr from lfortran");
           }
+        } else if (response.stderr) {
+          output = response.stderr.toString();
         } else {
           if (response.stdout) {
             output = response.stdout.toString();
@@ -248,7 +276,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           }
         }
       } catch (compileError: any) {
-        output = compileError.stdout;
+        if (compileError.stderr) {
+          output = compileError.stderr;
+        } else {
+          output = compileError.stdout;
+        }
         if (compileError.signal !== null) {
           this.logger.error(
             LFortranCLIAccessor.LOG_CONTEXT,
@@ -260,17 +292,20 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start, [
-        settings,
-        params,
-        text,
-        defaultValue,
-        noResponseIsSuccess,
-      ],
-      output
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "settings", settings,
+          "params", params,
+          "text", text,
+          "defaultValue", defaultValue,
+          "noResponseIsSuccess", noResponseIsSuccess,
+        ],
+        output
+      );
+    }
 
     return output;
   }
@@ -278,7 +313,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   async showDocumentSymbols(uri: string,
                             text: string,
                             settings: LFortranSettings): Promise<SymbolInformation[]> {
-    const fnid: string = "showDocumentSymbols(...)";
+    const fnid: string = "showDocumentSymbols";
     const start: number = performance.now();
 
     const flags = ["--show-document-symbols", "--continue-compilation"];
@@ -314,12 +349,18 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       }
     }
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start,
-      [uri, text, settings],
-      symbols
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "uri", uri,
+          "text", text,
+          "settings", settings,
+        ],
+        symbols
+      );
+    }
     return symbols;
   }
 
@@ -328,7 +369,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
                    line: number,
                    column: number,
                    settings: LFortranSettings): Promise<DefinitionLink[]> {
-    const fnid: string = "lookupName(...)";
+    const fnid: string = "lookupName";
     const start: number = performance.now();
 
     const definitions: DefinitionLink[] = [];
@@ -370,17 +411,20 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start, [
-        uri,
-        text,
-        line,
-        column,
-        settings,
-      ],
-      definitions
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "uri", uri,
+          "text", text,
+          "line", line,
+          "column", column,
+          "settings", settings,
+        ],
+        definitions
+      );
+    }
 
     return definitions;
   }
@@ -388,7 +432,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
   async showErrors(uri: string,
                    text: string,
                    settings: LFortranSettings): Promise<Diagnostic[]> {
-    const fnid: string = "showErrors(...)";
+    const fnid: string = "showErrors";
     const start: number = performance.now();
 
     const diagnostics: Diagnostic[] = [];
@@ -444,12 +488,18 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start,
-      [uri, text, settings],
-      diagnostics
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "uri", uri,
+          "text", text,
+          "settings", settings,
+        ],
+        diagnostics
+      );
+    }
     return diagnostics;
   }
 
@@ -459,7 +509,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
                      column: number,
                      newName: string,
                      settings: LFortranSettings): Promise<TextEdit[]> {
-    const fnid: string = "renameSymbol(...)";
+    const fnid: string = "renameSymbol";
     const start: number = performance.now();
 
     const edits: TextEdit[] = [];
@@ -499,18 +549,21 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logger.error(LFortranCLIAccessor.LOG_CONTEXT, error);
     }
 
-    this.logger.benchmarkAndTrace(
-      LFortranCLIAccessor.LOG_CONTEXT,
-      fnid, start, [
-        uri,
-        text,
-        line,
-        column,
-        newName,
-        settings
-      ],
-      edits
-    );
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logger.benchmarkAndTrace(
+        LFortranCLIAccessor.LOG_CONTEXT,
+        fnid, start,
+        [
+          "uri", uri,
+          "text", text,
+          "line", line,
+          "column", column,
+          "newName", newName,
+          "settings", settings,
+        ],
+        edits
+      );
+    }
 
     return edits;
   }
