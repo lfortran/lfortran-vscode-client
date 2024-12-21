@@ -306,20 +306,36 @@ export class Logger {
     }
   }
 
+  isBenchmarkOrTraceEnabled() {
+    return this.isBenchmarkEnabled() || this.isTraceEnabled();
+  }
+
   benchmarkAndTrace(context: string,
                     fnid: string,
                     start: number,
-                    params: any[],
+                    paramNamesAndValues: any[],
                     retval?: any): void {
     this.benchmark(context, fnid, start);
     if (this.isTraceEnabled()) {
-      const indentSize = (this.prettyPrint) ? this.indentSize : undefined;
-      const stringified: string = JSON.stringify([
-        fnid,
-        params,
-        retval
-      ], undefined, indentSize);
-      this.debug(context, stringified);
+      const indentSize: number | undefined = (this.prettyPrint) ? this.indentSize : undefined;
+      const params: object[] = [];
+      const names: string[] = [];
+      for (let i = 0, k = paramNamesAndValues.length; i < k; i += 2) {
+        const name: string = paramNamesAndValues[i];
+        const value: any = paramNamesAndValues[i + 1];
+        const param: object = {
+          [name]: value,
+        };
+        params.push(param);
+        names.push(name);
+      }
+      const signature: string = `${fnid}(${names.join(", ")})`
+      const stringified: string = JSON.stringify({
+        "function": signature,
+        "input": params,
+        "output": retval,
+      }, undefined, indentSize);
+      this.trace(context, stringified);
     }
   }
 }
