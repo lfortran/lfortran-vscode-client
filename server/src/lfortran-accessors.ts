@@ -282,6 +282,9 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     const start: number = performance.now();
 
     const flags = ["--show-document-symbols", "--continue-compilation"];
+    if (settings.compiler.flags !== "") {
+      flags.push(settings.compiler.flags);
+    }
     const stdout = await this.runCompiler(settings, flags, text, "[]");
 
     let symbols: SymbolInformation[];
@@ -340,6 +343,9 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         "--column=" + (column + 1),
         "--continue-compilation"
       ];
+      if (settings.compiler.flags !== "") {
+        flags.push(settings.compiler.flags);
+      }
       const stdout = await this.runCompiler(settings, flags, text, "[]");
       const results = JSON.parse(stdout);
       for (let i = 0, k = results.length; i < k; i++) {
@@ -395,6 +401,9 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     let stdout: string | null = null;
     try {
       const flags = ["--show-errors", "--continue-compilation"];
+      if (settings.compiler.flags !== "") {
+        flags.push(settings.compiler.flags);
+      }
       stdout =
         await this.runCompiler(settings, flags, text, "[]", true);
       if (stdout.length > 0) {
@@ -470,6 +479,9 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         "--column=" + (column + 1),
         "--continue-compilation"
       ];
+      if (settings.compiler.flags !== "") {
+        flags.push(settings.compiler.flags);
+      }
       const stdout = await this.runCompiler(settings, flags, text, "[]");
       const obj = JSON.parse(stdout);
       for (let i = 0, k = obj.length; i < k; i++) {
