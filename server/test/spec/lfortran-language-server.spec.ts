@@ -934,6 +934,30 @@ describe("LFortranLanguageServer", () => {
       const text: string = "foo bar baz qux";
       document.getText.returns(text);
 
+      const newName: string = "quo";
+
+      const results = [
+        {
+          kind: SymbolInformation.Function,
+          location: {
+            range: {
+              start: {
+                line: 1,
+                character: 1,
+              },
+              end: {
+                line: 1,
+                character: 4,
+              },
+            },
+            uri: "uri",
+          },
+          name: "foo",
+        },
+      ];
+      const stdout = JSON.stringify(results);
+      sinon.stub(lfortran, "runCompiler").resolves(stdout);
+
       const symbols: SymbolInformation[] = [
         {
           name: "foo",
@@ -1006,8 +1030,6 @@ describe("LFortranLanguageServer", () => {
       ];
 
       server.index(uri, symbols);
-
-      const newName: string = "quo";
 
       const expected: WorkspaceEdit = {
         changes: {

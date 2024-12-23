@@ -335,11 +335,11 @@ describe("LFortranCLIAccessor", () => {
         {
           range: {
             start: {
-              line: 8,
+              line: 7,
               character: 4,
             },
             end: {
-              line: 12,
+              line: 11,
               character: 24,
             }
           },
@@ -348,11 +348,11 @@ describe("LFortranCLIAccessor", () => {
         {
           range: {
             start: {
-              line: 4,
+              line: 3,
               character: 6,
             },
             end: {
-              line: 4,
+              line: 3,
               character: 27,
             }
           },
