@@ -9,7 +9,8 @@ import * as path from 'path';
 
 import {
   ExtensionContext,
-  workspace
+  commands,
+  workspace,
 } from 'vscode';
 
 import {
@@ -74,6 +75,10 @@ export function activate(context: ExtensionContext) {
     serverOptions,
     clientOptions
   );
+
+  client.onRequest("LFortranLanguageServer.action.openIssueReporter", (...params: any[]) => {
+    commands.executeCommand("workbench.action.openIssueReporter", ...params);
+  });
 
   // Start the client. This will also launch the server
   client.start();

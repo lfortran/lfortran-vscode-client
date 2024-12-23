@@ -2,6 +2,7 @@ import { Diagnostic } from 'vscode-languageserver/node';
 
 // The example settings
 export interface LFortranSettings {
+  openIssueReporterOnError: boolean;
   maxNumberOfProblems: number;
   compiler: {
     lfortranPath: string;
