@@ -44,6 +44,11 @@ import { PrefixTrie } from './prefix-trie';
 
 import { Logger } from './logger';
 
+import {
+  BugReportProvider,
+  RenameSymbolBugReportProvider,
+} from './bug-report-provider';
+
 // The global settings, used when the `workspace/configuration` request is not
 // supported by the client. Please note that this is not the case when using
 // this server with the client provided in this example but could happen with
@@ -81,6 +86,9 @@ export class LFortranLanguageServer {
 
   public dictionaries = new Map<string, PrefixTrie>();
 
+  public hasError: boolean = false;
+  public bugReportProvider: BugReportProvider | null = null;
+
   constructor(lfortran: LFortranAccessor,
               connection: _Connection,
               documents: TextDocuments<TextDocument>,
@@ -109,6 +117,16 @@ export class LFortranLanguageServer {
         ]
       );
     }
+  }
+
+  reportBug(title: string, body: string): void {
+    this.connection.sendRequest("LFortranLanguageServer.action.openIssueReporter", {
+      issueType: 0,  // IssueType.Bug
+      issueSource: "extension",  // IssueSource.Extension
+      extensionId: "lcompilers.lfortran-lsp",
+      issueTitle: title,
+      issueBody: body,
+    });
   }
 
   onInitialize(params: InitializeParams): InitializeResult {
@@ -482,6 +500,17 @@ export class LFortranLanguageServer {
       const text = textDocument.getText();
       const diagnostics: Diagnostic[] =
         await this.lfortran.showErrors(uri, text, this.settings);
+      if (this.settings.openIssueReporterOnError &&
+        (diagnostics.length > 0) &&
+        !this.hasError &&
+        (this.bugReportProvider != null)) {
+        const version = await this.lfortran.version(this.settings);
+        const issueTitle = this.bugReportProvider.getTitle();
+        const issueBody = this.bugReportProvider.getBody({ version, outputText: text, diagnostics });
+        this.reportBug(issueTitle, issueBody);
+      }
+      this.hasError = (diagnostics.length > 0);
+      this.bugReportProvider = null;
       // Send the computed diagnostics to VSCode.
       this.connection.sendDiagnostics({ uri: uri, diagnostics });
     } else {
@@ -730,6 +759,7 @@ export class LFortranLanguageServer {
         highlights
       );
     }
+
     return highlights;
   }
 
@@ -754,6 +784,7 @@ export class LFortranLanguageServer {
         edits
       );
     }
+
     return edits;
   }
 
@@ -771,33 +802,16 @@ export class LFortranLanguageServer {
       const pos: Position = params.position;
       this.settings = await this.getDocumentSettings(uri);
       this.logger.configure(this.settings);
-      // =====================================================================================
-      // FIXME: Once lfortran/lfortran issue #5524 is resolved, restore this call to lfortran:
-      // =====================================================================================
-      // const edits: TextEdit[] =
-      //   await this.lfortran.renameSymbol(uri, text, pos.line, pos.character, newName, this.settings);
-      // workspaceEdit = {
-      //   changes: {
-      //     [uri]: edits,
-      //   },
-      // };
-      const query: string | null = this.extractQuery(text, pos.line, pos.character);
-      if (query !== null) {
-        const dictionary = this.dictionaries.get(uri);
-        if ((dictionary !== undefined) && dictionary.contains(query)) {
-          const edits: TextEdit[] = this.renameSymbol(text, query, newName);
-          workspaceEdit = {
-            changes: {
-              [uri]: edits,
-            },
-          };
-        } else {
-          this.logger.warn(
-            LFortranLanguageServer.LFortranLanguageServer.LOG_CONTEXT,
-            'Cannot find symbol to rename: "%s"',
-            query);
-        }
-      }
+      const edits: TextEdit[] =
+        await this.lfortran.renameSymbol(
+          uri, text, pos.line, pos.character, newName, this.settings);
+      workspaceEdit = {
+        changes: {
+          [uri]: edits,
+        },
+      };
+      this.bugReportProvider =
+        new RenameSymbolBugReportProvider(params, text, workspaceEdit);
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
@@ -810,6 +824,7 @@ export class LFortranLanguageServer {
         workspaceEdit
       );
     }
+
     return workspaceEdit;
   }
 

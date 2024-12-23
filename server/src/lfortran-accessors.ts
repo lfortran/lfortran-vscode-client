@@ -34,6 +34,8 @@ import shellescape from 'shell-escape';
  */
 export interface LFortranAccessor {
 
+  version(settings: LFortranSettings): Promise<string>;
+
   /**
    * Looks-up all the symbols in the given document.
    */
@@ -310,6 +312,12 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     return output;
   }
 
+  async version(settings: LFortranSettings): Promise<string> {
+    const flags = ["--version"];
+    const output = await this.runCompiler(settings, flags, "", "");
+    return output;
+  }
+
   async showDocumentSymbols(uri: string,
                             text: string,
                             settings: LFortranSettings): Promise<SymbolInformation[]> {
@@ -528,9 +536,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           const range: Range = location.range;
 
           const start: Position = range.start;
+          start.line--;
           start.character--;
 
           const end: Position = range.end;
+          end.line--;
           end.character--;
 
           const edit: TextEdit = {

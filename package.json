@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dylon/lfortran-lsp"
+    "url": "https://github.com/lfortran/lfortran-lsp"
   },
   "publisher": "LCompilers",
   "categories": [],
@@ -40,6 +40,12 @@
       "type": "object",
       "title": "LFortran Language Server",
       "properties": {
+        "LFortranLanguageServer.openIssueReporterOnError": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "Open the issue reporter to submit a generated bug report when an internal error is detected."
+        },
         "LFortranLanguageServer.maxNumberOfProblems": {
           "scope": "resource",
           "type": "number",
