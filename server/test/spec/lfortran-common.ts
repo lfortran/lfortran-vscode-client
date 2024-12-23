@@ -4,6 +4,7 @@ export const settings: LFortranSettings = {
   maxNumberOfProblems: 100,
   compiler: {
     lfortranPath: "<error: please stub with sinon>",
+    flags: [],
   },
   log: {
     level: "off",

@@ -65,9 +65,12 @@
         },
         "LFortranLanguageServer.compiler.flags": {
           "scope": "resource",
-          "type": "string",
-          "default": "",
-          "description": "Additional flags to pass to the LFortran compiler ( space separated )."
+          "type": "array",
+          "item": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional flags to pass to the LFortran compiler."
         },
         "LFortranLanguageServer.log.level": {
           "scope": "resource",
