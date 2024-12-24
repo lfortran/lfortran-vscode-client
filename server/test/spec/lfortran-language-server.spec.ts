@@ -118,13 +118,13 @@ describe("LFortranLanguageServer", () => {
     };
 
     it("Returns all the symbols", async () => {
-      const response: SymbolInformation[] = [
+      const response: Record<string, any>[] = [
         {
           name: "baz",
-          // NOTE: Right now, the kind is hard-coded to Function ...
           kind: SymbolKind.Function,
+          filename: uri,
           location: {
-            uri: uri,
+            uri: "uri",
             range: {
               start: {
                 line: 0,
@@ -139,10 +139,10 @@ describe("LFortranLanguageServer", () => {
         },
         {
           name: "qux",
-          // NOTE: Right now, the kind is hard-coded to Function ...
           kind: SymbolKind.Function,
+          filename: uri,
           location: {
-            uri: uri,
+            uri: "uri",
             range: {
               start: {
                 line: 3,
@@ -161,7 +161,45 @@ describe("LFortranLanguageServer", () => {
       sinon.stub(lfortran, "runCompiler").resolves(stdout);
       document.getText.returns("");
 
-      const expected = response;
+      const expected: Record<string, any>[] = [
+        {
+          name: "baz",
+          kind: SymbolKind.Function,
+          filename: uri,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 0,
+                character: 1
+              },
+              end: {
+                line: 0,
+                character: 5
+              }
+            }
+          }
+        },
+        {
+          name: "qux",
+          kind: SymbolKind.Function,
+          filename: uri,
+          location: {
+            uri: uri,
+            range: {
+              start: {
+                line: 3,
+                character: 15
+              },
+              end: {
+                line: 3,
+                character: 25
+              }
+            }
+          }
+        },
+      ];
+
       for (const symbol of expected) {
         const range = symbol.location.range;
         range.start.character--;
@@ -238,7 +276,7 @@ describe("LFortranLanguageServer", () => {
 
     it("returns nothing when the document has not been defined", async () => {
       const actual = await server.onDefinition(request);
-      assert.isNull(actual);
+      assert.isEmpty(actual);
     });
   });
 
@@ -373,7 +411,7 @@ describe("LFortranLanguageServer", () => {
   });
 
   describe("extractDefinition", () => {
-    it("extracts definitions from the respective range", () => {
+    it("extracts definitions from the respective range", async () => {
       const text: string = [
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit,",
         "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
@@ -400,14 +438,14 @@ describe("LFortranLanguageServer", () => {
       const range: Range = { start, end };
       const location: Location = { uri, range };
 
-      let definition: string = server.extractDefinition(location);
+      let definition: string = await server.extractDefinition(location);
       assert.equal(definition, "Lorem ipsum");
 
       start.line = 2;
       start.character = 8;
       end.line = 5;
       end.character = 31;
-      definition = server.extractDefinition(location);
+      definition = await server.extractDefinition(location);
       assert.equal(definition, [
         "ad minim veniam, quis nostrud exercitation ullamco laboris",
         "nisi ut aliquip ex ea commodo consequat.",
@@ -418,9 +456,9 @@ describe("LFortranLanguageServer", () => {
   });
 
   describe("index", () => {
-    it("indexes empty lists of symbols", () => {
+    it("indexes empty lists of symbols", async () => {
       const symbols: SymbolInformation[] = [];
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
       const dictionary = server.dictionaries.get(uri);
       assert.isDefined(dictionary);
       const indexed: CompletionItem[] =
@@ -428,7 +466,7 @@ describe("LFortranLanguageServer", () => {
       assert.isEmpty(indexed);
     });
 
-    it("indexes singleton lists of symbols", () => {
+    it("indexes singleton lists of symbols", async () => {
       const text: string = "def foo; def bar; def baz; def qux; def quo;";
       document.getText.returns(text);
 
@@ -452,7 +490,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
       const dictionary = server.dictionaries.get(uri);
       assert.isDefined(dictionary);
       const indexed: CompletionItem[] =
@@ -466,7 +504,7 @@ describe("LFortranLanguageServer", () => {
       ]);
     });
 
-    it("indexes lists of symbols", () => {
+    it("indexes lists of symbols", async () => {
       const text: string = "def foo; def bar; def baz; def qux; def quo;";
       document.getText.returns(text);
 
@@ -524,7 +562,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
       const dictionary = server.dictionaries.get(uri);
       assert.isDefined(dictionary);
       const indexed: CompletionItem[] =
@@ -565,7 +603,7 @@ describe("LFortranLanguageServer", () => {
   });
 
   describe("onCompletion", () => {
-    it("completes queries based on indexed terms", () => {
+    it("completes queries based on indexed terms", async () => {
       const text: string = "def foo; def bar; def baz; def qux; def quo; ba";
       document.getText.returns(text);
 
@@ -623,7 +661,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
 
       const documentPosition: TextDocumentPositionParams = {
         textDocument: {
@@ -718,7 +756,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
 
       const hoverParams: HoverParams = {
         textDocument: {
@@ -1029,7 +1067,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
 
       const expected: WorkspaceEdit = {
         changes: {
@@ -1090,7 +1128,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
 
       const params: DocumentHighlightParams = {
         textDocument: document,
@@ -1128,7 +1166,7 @@ describe("LFortranLanguageServer", () => {
         },
       ];
 
-      server.index(uri, symbols);
+      await server.index(uri, symbols);
 
       const expected: DocumentHighlight[] = [
         {

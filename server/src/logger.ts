@@ -24,6 +24,23 @@ export function logLevelFromName(lowerName: string): LogLevel {
   return level;
 }
 
+interface Type {
+  new(...args: any[]): any;
+}
+
+export function makeLoggable(kind: Type): Type {
+  const context: string = kind.name;
+  kind.prototype.logFatal = function (...args: any[]) { this.logger.fatal(context, ...args); }
+  kind.prototype.logError = function (...args: any[]) { this.logger.error(context, ...args); }
+  kind.prototype.logWarn = function (...args: any[]) { this.logger.warn(context, ...args); }
+  kind.prototype.logInfo = function (...args: any[]) { this.logger.info(context, ...args); }
+  kind.prototype.logDebug = function (...args: any[]) { this.logger.debug(context, ...args); }
+  kind.prototype.logTrace = function (...args: any[]) { this.logger.trace(context, ...args); }
+  kind.prototype.logBenchmark = function (...args: any[]) { this.logger.benchmark(context, ...args); }
+  kind.prototype.logBenchmarkAndTrace = function (...args: any[]) { this.logger.benchmarkAndTrace(context, ...args); }
+  return kind;
+}
+
 export class Logger {
 
   /** Current `LogLevel` for filtering and formatting messages. */
