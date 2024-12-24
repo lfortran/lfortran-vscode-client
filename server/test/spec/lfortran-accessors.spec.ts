@@ -3,7 +3,6 @@ import {
   Diagnostic,
   DiagnosticSeverity,
   Range,
-  SymbolInformation,
   SymbolKind,
   TextEdit,
 } from "vscode-languageserver/node";
@@ -61,11 +60,51 @@ describe("LFortranCLIAccessor", () => {
     });
 
     it("returns the expected symbol information", async () => {
-      const response: SymbolInformation[] = [
+      const response: Record<string, any>[] = [
         {
           name: "foo",
-          // NOTE: Right now, the kind is hard-coded to Function ...
           kind: SymbolKind.Function,
+          filename: uri,
+          location: {
+            uri: "uri",
+            range: {
+              start: {
+                line: 0,
+                character: 1
+              },
+              end: {
+                line: 0,
+                character: 5
+              }
+            }
+          }
+        },
+        {
+          name: "bar",
+          kind: SymbolKind.Function,
+          filename: uri,
+          location: {
+            uri: "uri",
+            range: {
+              start: {
+                line: 3,
+                character: 15
+              },
+              end: {
+                line: 3,
+                character: 25
+              }
+            }
+          }
+        },
+      ];
+      const stdout = JSON.stringify(response);
+      sinon.stub(lfortran, "runCompiler").resolves(stdout);
+      const expected: Record<string, any>[] = [
+        {
+          name: "foo",
+          kind: SymbolKind.Function,
+          filename: uri,
           location: {
             uri: uri,
             range: {
@@ -82,8 +121,8 @@ describe("LFortranCLIAccessor", () => {
         },
         {
           name: "bar",
-          // NOTE: Right now, the kind is hard-coded to Function ...
           kind: SymbolKind.Function,
+          filename: uri,
           location: {
             uri: uri,
             range: {
@@ -99,9 +138,6 @@ describe("LFortranCLIAccessor", () => {
           }
         },
       ];
-      const stdout = JSON.stringify(response);
-      sinon.stub(lfortran, "runCompiler").resolves(stdout);
-      const expected = response;
       for (const symbol of expected) {
         const range = symbol.location.range;
         range.start.character--;

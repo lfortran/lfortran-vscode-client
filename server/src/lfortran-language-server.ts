@@ -3,6 +3,8 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
+import fs from 'fs';
+
 import {
   CompletionItem,
   CompletionItemKind,
@@ -42,10 +44,14 @@ import { LFortranAccessor } from './lfortran-accessors';
 
 import { PrefixTrie } from './prefix-trie';
 
-import { Logger } from './logger';
+import {
+  Logger,
+  makeLoggable,
+} from './logger';
 
 import {
   BugReportProvider,
+  ExtractDefinitionBugReportProvider,
   RenameSymbolBugReportProvider,
 } from './bug-report-provider';
 
@@ -65,11 +71,16 @@ const defaultSettings: LFortranSettings = {
   },
 };
 
-const RE_IDENTIFIABLE: RegExp = /^[a-zA-Z0-9_]$/;
+const RE_IDENTIFIABLE: RegExp = /^[a-z0-9_]$/i;
+const RE_ALPHABETIC: RegExp = /^[a-z]$/i;
+
+interface FileCacheEntry {
+  mtime: number;
+  text: string;
+  uri: string;
+}
 
 export class LFortranLanguageServer {
-  static LOG_CONTEXT: string = "LFortranLanguageServer";
-
   public lfortran: LFortranAccessor;
   public connection: _Connection;
   public documents: TextDocuments<TextDocument>;
@@ -89,6 +100,8 @@ export class LFortranLanguageServer {
   public hasError: boolean = false;
   public bugReportProvider: BugReportProvider | null = null;
 
+  public fileCache: Map<string, FileCacheEntry> = new Map();
+
   constructor(lfortran: LFortranAccessor,
               connection: _Connection,
               documents: TextDocuments<TextDocument>,
@@ -105,8 +118,7 @@ export class LFortranLanguageServer {
 
     logger.configure(settings);
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "lfortran", lfortran,
@@ -120,6 +132,7 @@ export class LFortranLanguageServer {
   }
 
   reportBug(title: string, body: string): void {
+    this.logDebug("Reporting a bug; title = \"%s\"\n%s", title, body);
     this.connection.sendRequest("LFortranLanguageServer.action.openIssueReporter", {
       issueType: 0,  // IssueType.Bug
       issueSource: "extension",  // IssueSource.Extension
@@ -172,8 +185,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "params", params,
@@ -195,8 +207,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "params", params,
@@ -205,12 +216,39 @@ export class LFortranLanguageServer {
     }
   }
 
-  extractDefinition(location: Location): string | null {
+  async extractDefinition(location: Location): Promise<string | null> {
     const fnid: string = "extractDefinition";
     const start: number = performance.now();
+
     let definition: string | null = null;
-    const document = this.documents.get(location.uri);
-    if (document !== undefined) {
+
+    let uri: string = location.uri;
+    const document = this.documents.get(uri);
+    let text = document?.getText();
+    if ((text === undefined) && uri.startsWith("file://")) {
+      uri = uri.substring(7);
+    }
+    if (text === undefined) {
+      if (fs.existsSync(uri)) {
+        let entry = this.fileCache.get(uri);
+        const stats = fs.statSync(uri);
+        if ((entry === undefined) || (entry.mtime !== stats.mtime)) {
+          text = fs.readFileSync(uri, 'utf8');
+          entry = {
+            mtime: stats.mtime,
+            text: text,
+            uri: uri,
+          };
+          this.fileCache.set(uri, entry);
+        } else {
+          text = entry.text;
+        }
+      } else {
+        this.logWarn("Failed to find file by URI: %s", uri);
+      }
+    }
+
+    if (text !== undefined) {
       const range: Range = location.range;
 
       const start: Position = range.start;
@@ -221,8 +259,6 @@ export class LFortranLanguageServer {
       const endLine: number = end.line;
       const endCol: number = end.character;
 
-      const text = document.getText();
-
       let currLine = 0;
       let currCol = 0;
 
@@ -230,46 +266,62 @@ export class LFortranLanguageServer {
         let c: string;
         if ((currLine === startLine) && (currCol === startCol)) {
           let j = i;
-          for (; (currLine < endLine) || (currLine === endLine) && (currCol <= endCol); j++) {
+          for (; ((currLine < endLine) || ((currLine === endLine) && (currCol <= endCol))) && (j < k); j++) {
             c = text[j];
-            if (c === '\n') {
-              currLine++;
-              currCol = 0;
-            } else if (c === '\r') {
-              const l = j + 1;
-              if ((l < k) && (text[l] === '\n')) {
-                j = l;
+            switch (c) {
+              case '\r': {
+                const l = j + 1;
+                if ((l < k) && (text[l] === '\n')) {
+                  j = l;
+                }
+                // fallthrough
               }
-              currLine++;
-              currCol = 0;
-            } else {
-              currCol++;
+              case '\n': {
+                currLine++;
+                currCol = 0;
+                break;
+              }
+              default: {
+                currCol++;
+              }
             }
           }
-          definition = text.substring(i, j);
+          if ((currLine < endLine) || ((currLine === endLine) && (currCol < endCol))) {
+            const provider: BugReportProvider =
+              new ExtractDefinitionBugReportProvider(location, text);
+            const version: string = await this.lfortran.version(this.settings);
+            const title: string = provider.getTitle();
+            const body: string = provider.getBody({ version });
+            this.reportBug(title, body);
+          } else {
+            definition = text.substring(i, j);
+          }
           break;
         } else {
           c = text[i];
-          if (c === '\n') {
-            currLine++;
-            currCol = 0;
-          } else if (c === '\r') {
-            const j = i + 1;
-            if ((j < k) && (text[j] === '\n')) {
-              i = j;
+          switch (c) {
+            case '\r': {
+              const j = i + 1;
+              if ((j < k) && (text[j] === '\n')) {
+                i = j;
+              }
+              // fallthrough
             }
-            currLine++;
-            currCol = 0;
-          } else {
-            currCol++;
+            case '\n': {
+              currLine++;
+              currCol = 0;
+              break;
+            }
+            default: {
+              currCol++;
+            }
           }
         }
       }
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "location", location,
@@ -280,7 +332,7 @@ export class LFortranLanguageServer {
     return definition;
   }
 
-  index(uri: string, symbols: SymbolInformation[]): void {
+  async index(uri: string, symbols: SymbolInformation[]): Promise<void> {
     const fnid: string = "index";
     const start: number = performance.now();
 
@@ -291,7 +343,7 @@ export class LFortranLanguageServer {
     for (let i = 0, k = symbols.length; i < k; i++) {
       const symbol: SymbolInformation = symbols[i];
       const definition: string | null =
-        this.extractDefinition(symbol.location);
+        await this.extractDefinition(symbol.location);
       terms.push(symbol.name);
       values.push({
         label: symbol.name,
@@ -308,8 +360,7 @@ export class LFortranLanguageServer {
     this.dictionaries.set(uri, dictionary);
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "uri", uri,
@@ -335,13 +386,12 @@ export class LFortranLanguageServer {
       if (symbols.length > 0) {
         // (symbols.length == 0) => error with document, but we still need to
         // support auto-completion.
-        this.index(uri, symbols);
+        await this.index(uri, symbols);
       }
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "request", request,
@@ -362,8 +412,8 @@ export class LFortranLanguageServer {
     this.settings = await this.getDocumentSettings(uri);
     this.logger.configure(this.settings);
     const document = this.documents.get(uri);
-    const text = document?.getText();
-    if (typeof text === "string") {
+    if (document !== undefined) {
+      const text = document.getText();
       const line = request.position.line;
       const column = request.position.character;
       definitions =
@@ -371,8 +421,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "request", request,
@@ -402,8 +451,7 @@ export class LFortranLanguageServer {
     this.documents.all().forEach(this.validateTextDocument.bind(this));
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "change", change,
@@ -418,8 +466,7 @@ export class LFortranLanguageServer {
 
     if (!this.hasConfigurationCapability) {
       if (this.logger.isBenchmarkOrTraceEnabled()) {
-        this.logger.benchmarkAndTrace(
-          LFortranLanguageServer.LOG_CONTEXT,
+        this.logBenchmarkAndTrace(
           fnid, start,
           [
             "uri", uri,
@@ -442,8 +489,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "uri", uri,
@@ -462,8 +508,7 @@ export class LFortranLanguageServer {
     this.documentSettings.delete(event.document.uri);
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "event", event,
@@ -479,8 +524,7 @@ export class LFortranLanguageServer {
     this.validateTextDocument(event.document);
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "event", event,
@@ -514,14 +558,11 @@ export class LFortranLanguageServer {
       // Send the computed diagnostics to VSCode.
       this.connection.sendDiagnostics({ uri: uri, diagnostics });
     } else {
-      this.logger.error(
-        LFortranLanguageServer.LOG_CONTEXT,
-        'Cannot validate a document with no diagnostic capability');
+      this.logError('Cannot validate a document with no diagnostic capability');
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "textDocument", textDocument,
@@ -543,11 +584,18 @@ export class LFortranLanguageServer {
 
       if ((line === currLine) && (column === currCol)) {
         const re_identifiable: RegExp = RE_IDENTIFIABLE;
+        const re_alphabetic: RegExp = RE_ALPHABETIC;
         if (re_identifiable.test(c)) {
           let l = i;
           let u = i + 1;
           while ((l > 0) && re_identifiable.test(text[l - 1])) {
             l--;
+          }
+          while (!re_alphabetic.test(text[l]) && (l <= i)) {
+            l++;
+          }
+          if (l > i) {
+            return null;
           }
           while ((u < k) && re_identifiable.test(text[u])) {
             u++;
@@ -573,8 +621,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "text", text,
@@ -607,8 +654,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "documentPosition", documentPosition,
@@ -623,8 +669,7 @@ export class LFortranLanguageServer {
     const fnid: string = "onCompletionResolve";
     const start: number = performance.now();
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "item", item,
@@ -665,8 +710,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "params", params,
@@ -749,8 +793,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "text", text,
@@ -773,8 +816,7 @@ export class LFortranLanguageServer {
     }));
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "text", text,
@@ -815,8 +857,7 @@ export class LFortranLanguageServer {
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "params", params,
@@ -847,17 +888,13 @@ export class LFortranLanguageServer {
             range: range,
           }));
         } else {
-          this.logger.warn(
-            LFortranLanguageServer.LOG_CONTEXT,
-            'Cannot find symbol to highlight: "%s"',
-            query);
+          this.logWarn('Cannot find symbol to highlight: "%s"', query);
         }
       }
     }
 
     if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logger.benchmarkAndTrace(
-        LFortranLanguageServer.LOG_CONTEXT,
+      this.logBenchmarkAndTrace(
         fnid, start,
         [
           "params", params,
@@ -868,4 +905,6 @@ export class LFortranLanguageServer {
     return highlights;
   }
 }
+
+makeLoggable(LFortranLanguageServer);
 
