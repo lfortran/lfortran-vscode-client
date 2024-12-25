@@ -412,10 +412,6 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           end.line--;
           end.character--;
 
-          this.logDebug(
-            "Here URI: %s, range: %s",
-            uri, JSON.stringify(range)
-          );
 
           definitions.push({
             targetUri: uri,
