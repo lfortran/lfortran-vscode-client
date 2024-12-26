@@ -356,9 +356,16 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         const range: Range = location.range;
 
         const start: Position = range.start;
+        // if uri contains .ts file, then we need not to decrement the line and character by 1
+        if (!uri.includes(".ts")) {
+          start.line--;
+        }
         start.character--;
 
         const end: Position = range.end;
+        if (!uri.includes(".ts")) {
+          end.line--;
+        }
         end.character--;
       }
     }
@@ -403,10 +410,17 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           const range: Range = location.range;
 
           const start: Position = range.start;
+          if (!uri.includes(".ts")) {
+            start.line--;
+          }
           start.character--;
 
           const end: Position = range.end;
+          if (!uri.includes(".ts")) {
+            end.line--;
+          }
           end.character--;
+
 
           definitions.push({
             targetUri: uri,
@@ -478,6 +492,9 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           for (let i = 0; i < k; i++) {
             const diagnostic: Diagnostic = results.diagnostics[i];
             diagnostic.source = "lfortran-lsp";
+            if (!uri.includes(".ts")) {
+              diagnostic.range.start.line--;
+            }
             diagnostic.range.start.character--;
             diagnostics.push(diagnostic);
           }
