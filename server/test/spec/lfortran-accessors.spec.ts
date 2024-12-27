@@ -289,12 +289,12 @@ describe("LFortranCLIAccessor", () => {
           {
             range: {
               start: {
-                line: 0,
+                line: 1,
                 character: 10
               },
               end: {
-                line: 2,
-                character: 20
+                line: 3,
+                character: 21
               }
             },
             severity: DiagnosticSeverity.Warning,
@@ -304,12 +304,12 @@ describe("LFortranCLIAccessor", () => {
           {
             range: {
               start: {
-                line: 5,
+                line: 6,
                 character: 13
               },
               end: {
-                line: 5,
-                character: 17
+                line: 6,
+                character: 18
               }
             },
             severity: DiagnosticSeverity.Warning,

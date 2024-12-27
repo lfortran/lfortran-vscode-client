@@ -508,7 +508,16 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           for (let i = 0; i < k; i++) {
             const diagnostic: Diagnostic = results.diagnostics[i];
             diagnostic.source = "lfortran-lsp";
-            diagnostic.range.start.character--;
+
+            const range: Range = diagnostic.range;
+
+            const start: Position = range.start;
+            start.line--;
+            start.character--;
+
+            const end: Position = range.end;
+            end.line--;
+
             diagnostics.push(diagnostic);
           }
         }
