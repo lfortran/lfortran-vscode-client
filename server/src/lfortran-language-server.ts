@@ -5,6 +5,8 @@
 
 import fs from 'fs';
 
+import path from 'path';
+
 import {
   CompletionItem,
   CompletionItemKind,
@@ -28,6 +30,7 @@ import {
   Range,
   RenameParams,
   SymbolInformation,
+  SymbolKind,
   TextDocumentChangeEvent,
   TextDocumentPositionParams,
   TextDocuments,
@@ -71,13 +74,43 @@ const defaultSettings: LFortranSettings = {
   },
 };
 
+const symbolKindToCompletionItemKind: Map<SymbolKind, CompletionItemKind> = new Map([
+  [SymbolKind.File, CompletionItemKind.File],
+  [SymbolKind.Module, CompletionItemKind.Module],
+  [SymbolKind.Namespace, undefined],
+  [SymbolKind.Package, undefined],
+  [SymbolKind.Class, CompletionItemKind.Class],
+  [SymbolKind.Method, CompletionItemKind.Method],
+  [SymbolKind.Property, CompletionItemKind.Property],
+  [SymbolKind.Field, CompletionItemKind.Field],
+  [SymbolKind.Constructor, CompletionItemKind.Constructor],
+  [SymbolKind.Enum, CompletionItemKind.Enum],
+  [SymbolKind.Interface, CompletionItemKind.Interface],
+  [SymbolKind.Function, CompletionItemKind.Function],
+  [SymbolKind.Variable, CompletionItemKind.Variable],
+  [SymbolKind.Constant, CompletionItemKind.Constant],
+  [SymbolKind.String, undefined],
+  [SymbolKind.Number, undefined],
+  [SymbolKind.Boolean, undefined],
+  [SymbolKind.Array, undefined],
+  [SymbolKind.Object, undefined],
+  [SymbolKind.Key, undefined],
+  [SymbolKind.Null, undefined],
+  [SymbolKind.EnumMember, CompletionItemKind.EnumMember],
+  [SymbolKind.Struct, CompletionItemKind.Struct],
+  [SymbolKind.Event, CompletionItemKind.Event],
+  [SymbolKind.Operator, CompletionItemKind.Operator],
+  [SymbolKind.TypeParameter, CompletionItemKind.TypeParameter],
+]);
+
 const RE_IDENTIFIABLE: RegExp = /^[a-z0-9_]$/i;
 const RE_ALPHABETIC: RegExp = /^[a-z]$/i;
+const RE_ALPHA_UNDER: RegExp = /^[a-z_]$/i;
 
 interface FileCacheEntry {
-  mtime: number;
+  mtime: Date;
   text: string;
-  uri: string;
+  path: string;
 }
 
 export class LFortranLanguageServer {
@@ -216,30 +249,50 @@ export class LFortranLanguageServer {
     }
   }
 
-  async extractDefinition(location: Location): Promise<string | null> {
+  async extractDefinition(location: Location, resolved?: Map<string, string>): Promise<string | null> {
     const fnid: string = "extractDefinition";
     const start: number = performance.now();
 
     let definition: string | null = null;
 
-    let uri: string = location.uri;
+    const uri: string = location.uri;
     const document = this.documents.get(uri);
     let text = document?.getText();
-    if ((text === undefined) && uri.startsWith("file://")) {
-      uri = uri.substring(7);
-    }
     if (text === undefined) {
-      if (fs.existsSync(uri)) {
-        let entry = this.fileCache.get(uri);
-        const stats = fs.statSync(uri);
+      let filePath: string = uri;
+      if (filePath.startsWith("file://")) {
+        filePath = filePath.substring(7);
+      }
+      if (!fs.existsSync(filePath)) {
+        let resolution: string | undefined = resolved?.get(filePath);
+        if (resolution === undefined) {
+          for (const flag of this.settings.compiler.flags) {
+            if (flag.startsWith("-I")) {
+              const includeDir = flag.substring(2);
+              resolution = path.join(includeDir, filePath);
+              if (fs.existsSync(resolution)) {
+                resolution = fs.realpathSync(resolution);
+                resolved?.set(filename, resolution);
+                filePath = resolution;
+                break;
+              }
+            }
+          }
+        } else {
+          filePath = resolution;
+        }
+      }
+      if (fs.existsSync(filePath)) {
+        let entry = this.fileCache.get(filePath);
+        const stats = fs.statSync(filePath);
         if ((entry === undefined) || (entry.mtime !== stats.mtime)) {
-          text = fs.readFileSync(uri, 'utf8');
+          text = fs.readFileSync(filePath, 'utf8');
           entry = {
             mtime: stats.mtime,
             text: text,
-            uri: uri,
+            path: filePath,
           };
-          this.fileCache.set(uri, entry);
+          this.fileCache.set(filePath, entry);
         } else {
           text = entry.text;
         }
@@ -339,19 +392,25 @@ export class LFortranLanguageServer {
     // (symbols.length == 0) => error with document, but we still need to
     // support auto-completion.
     const terms: string[] = [];
-    const values: CompletionItem[] = [];
+    const values: CompletionItem[][] = [];
+    const visited: Map<string, CompletionItem[]> = new Map();
+    const resolved: Map<string, string> = new Map();
     for (let i = 0, k = symbols.length; i < k; i++) {
       const symbol: SymbolInformation = symbols[i];
       const definition: string | null =
-        await this.extractDefinition(symbol.location);
-      terms.push(symbol.name);
-      values.push({
+        await this.extractDefinition(symbol.location, resolved);
+      let candidates: CompletionItem[] | undefined = visited.get(symbol.name);
+      if (candidates === undefined) {
+        candidates = [];
+        visited.set(symbol.name, candidates);
+        terms.push(symbol.name);
+        values.push(candidates);
+      }
+      const kind: CompletionItemKind =
+        symbolKindToCompletionItemKind.get(symbol.kind);
+      candidates.push({
         label: symbol.name,
-        // FIXME: Once lfortran returns the correct symbol kinds, map them
-        // to their corresponding completion kind, here.
-        // ---------------------------------------------------------------
-        // kind: symbol.kind,
-        kind: CompletionItemKind.Text,
+        kind: kind,
         detail: definition,
       });
     }
@@ -580,24 +639,29 @@ export class LFortranLanguageServer {
     let currCol: number = 0;
 
     for (let i = 0, k = text.length; i < k; i++) {
-      const c: string = text[i];
+      let c: string = text[i];
 
       if ((line === currLine) && (column === currCol)) {
-        const re_identifiable: RegExp = RE_IDENTIFIABLE;
-        const re_alphabetic: RegExp = RE_ALPHABETIC;
-        if (re_identifiable.test(c)) {
+        const reIdentifiable: RegExp = RE_IDENTIFIABLE;
+        const reAlphabetic: RegExp = RE_ALPHABETIC;
+        if (!reIdentifiable.test(c) && (i > 0) && reIdentifiable.test(text[i - 1])) {
+          // Cursor is just right of the query string's word boundary.
+          i--;
+          c = text[i];
+        }
+        if (reIdentifiable.test(c)) {
           let l = i;
           let u = i + 1;
-          while ((l > 0) && re_identifiable.test(text[l - 1])) {
+          while ((l > 0) && reIdentifiable.test(text[l - 1])) {
             l--;
           }
-          while (!re_alphabetic.test(text[l]) && (l <= i)) {
+          while (!reAlphabetic.test(text[l]) && (l <= i)) {
             l++;
           }
           if (l > i) {
             return null;
           }
-          while ((u < k) && re_identifiable.test(text[u])) {
+          while ((u < k) && reIdentifiable.test(text[u])) {
             u++;
           }
           query = text.substring(l, u);
@@ -605,18 +669,22 @@ export class LFortranLanguageServer {
         }
       }
 
-      if (c === '\n') {
-        currLine++;
-        currCol = 0;
-      } else if (c === '\r') {
-        const j = i + 1;
-        if ((j < k) && (text[j] === '\n')) {
-          i = j;
+      switch (c) {
+        case '\r': {
+          const j = i + 1;
+          if ((j < k) && (text[j] === '\n')) {
+            i = j;
+          }
+          // fallthrough
         }
-        currLine++;
-        currCol = 0;
-      } else {
-        currCol++;
+        case '\n': {
+          currLine++;
+          currCol = 0;
+          break;
+        }
+        default: {
+          currCol++;
+        }
       }
     }
 
@@ -631,6 +699,7 @@ export class LFortranLanguageServer {
         query
       );
     }
+
     return query;
   }
 
@@ -639,6 +708,7 @@ export class LFortranLanguageServer {
     const start: number = performance.now();
 
     let completions: CompletionItem[] | null = null;
+
     const uri: string = documentPosition.textDocument.uri;
     const document = this.documents.get(uri);
     const dictionary = this.dictionaries.get(uri);
@@ -649,7 +719,7 @@ export class LFortranLanguageServer {
       const column: number = pos.character - 1;
       const query: string | null = this.extractQuery(text, line, column);
       if (query !== null) {
-        completions = Array.from(dictionary.lookup(query)) as CompletionItem[];
+        completions = Array.from(dictionary.lookup(query)).flat() as CompletionItem[];
       }
     }
 
@@ -680,25 +750,28 @@ export class LFortranLanguageServer {
     return item;
   }
 
-  onHover(params: HoverParams): Hover | null {
+  async onHover(params: HoverParams): Promise<Hover | null> {
     const fnid: string = "onHover";
     const start: number = performance.now();
 
     let hover: Hover | null = null;
     const uri: string = params.textDocument.uri;
     const document = this.documents.get(uri);
-    const dictionary = this.dictionaries.get(uri);
-    if ((document !== undefined) && (dictionary !== undefined)) {
+    if (document !== undefined) {
       const text: string = document.getText();
       const pos: Position = params.position;
       const line = pos.line;
       const column = pos.character;
-      const query: string | null = this.extractQuery(text, line, column);
-      if (query !== null) {
-        const completion: CompletionItem | undefined =
-          dictionary.exactLookup(query) as CompletionItem;
-        const definition: string | undefined = completion?.detail;
-        if (definition !== undefined) {
+      const dlinks: DefinitionLink[] =
+        await this.lfortran.lookupName(uri, text, line, column, this.settings);
+      if (dlinks.length > 0) {
+        const dlink: DefinitionLink = dlinks[0];
+        const location: Location = {
+          uri: dlink.targetUri,
+          range: dlink.targetRange,
+        };
+        const definition: string | null = await this.extractDefinition(location);
+        if (definition !== null) {
           hover = {
             contents: {
               language: "fortran",
@@ -736,59 +809,64 @@ export class LFortranLanguageServer {
 
     const k = text.length;
     const l = symbol.length;
-    let u: string | null = null;
     const w: string = symbol[0];
     const reIdentifiable = RE_IDENTIFIABLE;
+    const reAlphaUnder = RE_ALPHA_UNDER;
     for (let i = 0; i < k; i++) {
-      const v: string = text[i];
+      let v: string = text[i];
 
-      if (v === '\n') {
-        currLine++;
-        currCol = 0;
-        u = v;
-      } else if (v === '\r') {
-        const j = i + 1;
-        if ((j < k) && (text[j] === '\n')) {
-          i = j;
-          u = '\n';
-        } else {
-          u = v;
+      switch (v) {
+        case '\r': {
+          const j = i + 1;
+          if ((j < k) && (text[j] === '\n')) {
+            i = j;
+            v = '\n';
+          }
+          // fallthrough
         }
-        currLine++;
-        currCol = 0;
-      } else if ((v === w) && ((u === null) || !reIdentifiable.test(u))) {
-        const startLine: number = currLine;
-        const startCol: number = currCol;
-
-        let j: number = 1;
-        for (; (j < l) && ((i + j) < k) && (text[i + j] === symbol[j]); j++) {
-          // empty
+        case '\n': {
+          currLine++;
+          currCol = 0;
+          break;
         }
+        default: {
+          if ((v === w) &&
+              ((i === 0) ||
+               !reIdentifiable.test(text[i - 1]) ||
+               ((text[i - 1] == "_") &&
+                ((i < 2) || !reAlphaUnder.test(text[i - 2]))))) {
+            const startLine: number = currLine;
+            const startCol: number = currCol;
 
-        currCol += j;
-        i += (j - 1);
-        u = text[i];
+            let j: number = 1;
+            for (; (j < l) && ((i + j) < k) && (text[i + j] === symbol[j]); j++) {
+              // empty
+            }
 
-        if ((j === l) && (((i + 1) === k) || !reIdentifiable.test(text[i + 1]))) {
-          const endLine: number = currLine;
-          const endCol: number = currCol;
+            currCol += j;
+            i += (j - 1);
 
-          const highlight: Range = {
-            start: {
-              line: startLine,
-              character: startCol,
-            },
-            end: {
-              line: endLine,
-              character: endCol,
-            },
-          };
+            if ((j === l) && (((i + 1) === k) || !reIdentifiable.test(text[i + 1]))) {
+              const endLine: number = currLine;
+              const endCol: number = currCol;
 
-          highlights.push(highlight);
+              const highlight: Range = {
+                start: {
+                  line: startLine,
+                  character: startCol,
+                },
+                end: {
+                  line: endLine,
+                  character: endCol,
+                },
+              };
+
+              highlights.push(highlight);
+            }
+          } else {
+            currCol++;
+          }
         }
-      } else {
-        currCol++;
-        u = v;
       }
     }
 
@@ -804,30 +882,6 @@ export class LFortranLanguageServer {
     }
 
     return highlights;
-  }
-
-  renameSymbol(text: string, symbol: string, newName: string): TextEdit[] {
-    const fnid: string = "renameSymbol";
-    const start: number = performance.now();
-
-    const edits: TextEdit[] = this.highlightSymbol(text, symbol).map(range => ({
-      range: range,
-      newText: newName,
-    }));
-
-    if (this.logger.isBenchmarkOrTraceEnabled()) {
-      this.logBenchmarkAndTrace(
-        fnid, start,
-        [
-          "text", text,
-          "symbol", symbol,
-          "newName", newName,
-        ],
-        edits
-      );
-    }
-
-    return edits;
   }
 
   async onRenameRequest(params: RenameParams): Promise<WorkspaceEdit | null> {

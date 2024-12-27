@@ -69,11 +69,11 @@ describe("LFortranCLIAccessor", () => {
             uri: "uri",
             range: {
               start: {
-                line: 0,
+                line: 1,
                 character: 1
               },
               end: {
-                line: 0,
+                line: 1,
                 character: 5
               }
             }
@@ -87,11 +87,11 @@ describe("LFortranCLIAccessor", () => {
             uri: "uri",
             range: {
               start: {
-                line: 3,
+                line: 4,
                 character: 15
               },
               end: {
-                line: 3,
+                line: 4,
                 character: 25
               }
             }
@@ -198,14 +198,15 @@ describe("LFortranCLIAccessor", () => {
 
       const stdout = JSON.stringify([
         {
+          filename: uri,
           location: {
             range: {
               start: {
-                line: 3,
+                line: 4,
                 character: 12
               },
               end: {
-                line: 3,
+                line: 4,
                 character: 20
               }
             }
@@ -288,11 +289,11 @@ describe("LFortranCLIAccessor", () => {
           {
             range: {
               start: {
-                line: 0,
+                line: 1,
                 character: 10
               },
               end: {
-                line: 2,
+                line: 3,
                 character: 20
               }
             },
@@ -303,11 +304,11 @@ describe("LFortranCLIAccessor", () => {
           {
             range: {
               start: {
-                line: 5,
+                line: 6,
                 character: 13
               },
               end: {
-                line: 5,
+                line: 6,
                 character: 17
               }
             },
