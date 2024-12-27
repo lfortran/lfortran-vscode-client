@@ -294,7 +294,7 @@ describe("LFortranCLIAccessor", () => {
               },
               end: {
                 line: 3,
-                character: 21
+                character: 20
               }
             },
             severity: DiagnosticSeverity.Warning,
@@ -309,7 +309,7 @@ describe("LFortranCLIAccessor", () => {
               },
               end: {
                 line: 6,
-                character: 18
+                character: 17
               }
             },
             severity: DiagnosticSeverity.Warning,

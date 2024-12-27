@@ -376,7 +376,7 @@ describe("LFortranLanguageServer", () => {
               },
               end: {
                 line: 3,
-                character: 21
+                character: 20
               }
             },
             severity: DiagnosticSeverity.Warning,
@@ -391,7 +391,7 @@ describe("LFortranLanguageServer", () => {
               },
               end: {
                 line: 6,
-                character: 18
+                character: 17
               }
             },
             // NOTE: Right now, the severity is hard-coded to Warning ...
