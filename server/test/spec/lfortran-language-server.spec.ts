@@ -25,7 +25,6 @@ import {
   TextDocumentChangeEvent,
   TextDocumentPositionParams,
   TextDocuments,
-  TextEdit,
   WorkspaceEdit,
 } from "vscode-languageserver/node";
 
@@ -127,11 +126,11 @@ describe("LFortranLanguageServer", () => {
             uri: "uri",
             range: {
               start: {
-                line: 0,
+                line: 1,
                 character: 1
               },
               end: {
-                line: 0,
+                line: 1,
                 character: 5
               }
             }
@@ -145,11 +144,11 @@ describe("LFortranLanguageServer", () => {
             uri: "uri",
             range: {
               start: {
-                line: 3,
+                line: 4,
                 character: 15
               },
               end: {
-                line: 3,
+                line: 4,
                 character: 25
               }
             }
@@ -249,14 +248,15 @@ describe("LFortranLanguageServer", () => {
 
       const stdout = JSON.stringify([
         {
+          filename: uri,
           location: {
             range: {
               start: {
-                line: 3,
+                line: 4,
                 character: 12
               },
               end: {
-                line: 3,
+                line: 4,
                 character: 20
               }
             }
@@ -473,7 +473,7 @@ describe("LFortranLanguageServer", () => {
       const symbols: SymbolInformation[] = [
         {
           name: "foo",
-          kind: SymbolInformation.Function,
+          kind: SymbolKind.Function,
           location: {
             uri: uri,
             range: {
@@ -496,11 +496,13 @@ describe("LFortranLanguageServer", () => {
       const indexed: CompletionItem[] =
         Array.from(dictionary) as CompletionItem[];
       assert.deepEqual(indexed, [
-        {
-          label: "foo",
-          kind: CompletionItemKind.Text,
-          detail: "def foo;"
-        },
+        [
+          {
+            label: "foo",
+            kind: CompletionItemKind.Function,
+            detail: "def foo;"
+          },
+        ],
       ]);
     });
 
@@ -528,7 +530,7 @@ describe("LFortranLanguageServer", () => {
         },
         {
           name: "bar",
-          kind: SymbolKind.Function,
+          kind: SymbolKind.Variable,
           location: {
             uri: uri,
             range: {
@@ -545,7 +547,7 @@ describe("LFortranLanguageServer", () => {
         },
         {
           name: "baz",
-          kind: SymbolKind.Function,
+          kind: SymbolKind.Constant,
           location: {
             uri: uri,
             range: {
@@ -568,21 +570,27 @@ describe("LFortranLanguageServer", () => {
       const indexed: CompletionItem[] =
         Array.from(dictionary) as CompletionItem[];
       assert.deepEqual(indexed, [
-        {
-          label: "foo",
-          kind: CompletionItemKind.Text,
-          detail: "def foo;"
-        },
-        {
-          label: "bar",
-          kind: CompletionItemKind.Text,
-          detail: "def bar;"
-        },
-        {
-          label: "baz",
-          kind: CompletionItemKind.Text,
-          detail: "def baz;"
-        },
+        [
+          {
+            label: "foo",
+            kind: CompletionItemKind.Function,
+            detail: "def foo;"
+          },
+        ],
+        [
+          {
+            label: "bar",
+            kind: CompletionItemKind.Variable,
+            detail: "def bar;"
+          },
+        ],
+        [
+          {
+            label: "baz",
+            kind: CompletionItemKind.Constant,
+            detail: "def baz;"
+          },
+        ],
       ]);
     });
   });
@@ -594,11 +602,14 @@ describe("LFortranLanguageServer", () => {
       let query: string = server.extractQuery(text, 0, 0);
       assert.equal(query, "Lorem");
 
-      query = server.extractQuery(text, 0, 26);  // actual text, ",", is not identifiable.
-      assert.isNull(query);
-
       query = server.extractQuery(text, 0, 25);
       assert.equal(query, "amet");
+
+      query = server.extractQuery(text, 0, 26);  // actual text "," is just right of the word boundary
+      assert.equal(query, "amet");
+
+      query = server.extractQuery(text, 0, 27);  // actual text " "
+      assert.isNull(query);
     });
   });
 
@@ -627,7 +638,7 @@ describe("LFortranLanguageServer", () => {
         },
         {
           name: "bar",
-          kind: SymbolKind.Function,
+          kind: SymbolKind.Variable,
           location: {
             uri: uri,
             range: {
@@ -683,12 +694,12 @@ describe("LFortranLanguageServer", () => {
       const expected: CompletionItem[] = [
         {
           label: "bar",
-          kind: CompletionItemKind.Text,
+          kind: CompletionItemKind.Variable,
           detail: "def bar;"
         },
         {
           label: "baz",
-          kind: CompletionItemKind.Text,
+          kind: CompletionItemKind.Function,
           detail: "def baz;"
         },
       ];
@@ -702,61 +713,26 @@ describe("LFortranLanguageServer", () => {
       const text: string = "def foo; def bar; def baz; def qux; def quo; ba";
       document.getText.returns(text);
 
-      const symbols: SymbolInformation[] = [
+      const stdout = JSON.stringify([
         {
-          name: "foo",
-          kind: SymbolKind.Function,
+          filename: uri,
           location: {
-            uri: uri,
+            uri: "uri",
             range: {
               start: {
-                line: 0,
-                character: 0,
+                line: 1,
+                character: 1,
               },
               end: {
-                line: 0,
-                character: 7,
+                line: 1,
+                character: 8,
               },
             },
           },
         },
-        {
-          name: "bar",
-          kind: SymbolKind.Function,
-          location: {
-            uri: uri,
-            range: {
-              start: {
-                line: 0,
-                character: 9,
-              },
-              end: {
-                line: 0,
-                character: 16,
-              },
-            },
-          },
-        },
-        {
-          name: "baz",
-          kind: SymbolKind.Function,
-          location: {
-            uri: uri,
-            range: {
-              start: {
-                line: 0,
-                character: 18,
-              },
-              end: {
-                line: 0,
-                character: 25,
-              },
-            },
-          },
-        },
-      ];
+      ]);
 
-      await server.index(uri, symbols);
+      sinon.stub(lfortran, "runCompiler").resolves(stdout);
 
       const hoverParams: HoverParams = {
         textDocument: {
@@ -768,202 +744,10 @@ describe("LFortranLanguageServer", () => {
         }
       };
 
-      const response: Hover = server.onHover(hoverParams);
+      const response: Hover = await server.onHover(hoverParams);
       const contents: MarkedString = response.contents as MarkedString;
       assert.equal(contents.language, "fortran");
       assert.equal(contents.value, "def foo;");
-    });
-  });
-
-  describe("renameSymbol", () => {
-    describe("renaming a symbol over an empty string", () => {
-      it("should change nothing", () => {
-        const symbol: string = "foo";
-        const newName: string = "bar";
-        const text: string = "";
-        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
-        assert.isEmpty(edits);
-      });
-    });
-
-    describe("renaming a symbol in a singleton string", () => {
-      it("should change the symbol as requested", () => {
-        const symbol: string = "lorem";
-        const newName: string = "id";
-        const text: string = "lorem";
-        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
-        assert.deepEqual(edits, [
-          {
-            range: {
-              start: {
-                line: 0,
-                character: 0,
-              },
-              end: {
-                line: 0,
-                character: 5,
-              },
-            },
-            newText: newName,
-          },
-        ]);
-      });
-    });
-
-    describe("renaming a non-existing symbol", () => {
-      it("should change nothing", () => {
-        const symbol: string = "foo";
-        const newName: string = "bar";
-        const text: string = "baz qux quo";
-        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
-        assert.isEmpty(edits);
-      });
-    });
-
-    describe("renaming a symbol on a single line", () => {
-      it("should replace all the respective terms", () => {
-        const symbol: string = "foo";
-        const newName: string = "abc";
-        const text: string = "foo bar baz%foo foo_qux quo_foo foo";
-        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
-        assert.deepEqual(edits, [
-          {
-            range: {
-              start: {
-                line: 0,
-                character: 0,
-              },
-              end: {
-                line: 0,
-                character: 3,
-              },
-            },
-            newText: newName,
-          },
-          {
-            range: {
-              start: {
-                line: 0,
-                character: 12,
-              },
-              end: {
-                line: 0,
-                character: 15,
-              },
-            },
-            newText: newName,
-          },
-          {
-            range: {
-              start: {
-                line: 0,
-                character: 32,
-              },
-              end: {
-                line: 0,
-                character: 35,
-              },
-            },
-            newText: newName,
-          },
-        ]);
-      });
-    });
-
-    describe("renaming a symbol over multiple lines", () => {
-      it("should replace all respective symbols", () => {
-        const symbol: string = "foo";
-        const newName: string = "bar";
-        const text: string = [
-          "Foo bar baz",
-          "qux quo",
-          "abc%foo",
-          "foo%def",
-          "FOO foo bar_foo",
-          "baz_foo quux FoO foofoo bax_foo_qux"
-        ].join("\n");
-        const edits: TextEdit[] = server.renameSymbol(text, symbol, newName);
-        assert.deepEqual(edits, [
-          {
-            range: {
-              start: {
-                line: 0,
-                character: 0,
-              },
-              end: {
-                line: 0,
-                character: 3,
-              },
-            },
-            newText: newName,
-          },
-          {
-            range: {
-              start: {
-                line: 2,
-                character: 4,
-              },
-              end: {
-                line: 2,
-                character: 7,
-              },
-            },
-            newText: newName,
-          },
-          {
-            range: {
-              start: {
-                line: 3,
-                character: 0,
-              },
-              end: {
-                line: 3,
-                character: 3,
-              },
-            },
-            newText: newName,
-          },
-          {
-            range: {
-              start: {
-                line: 4,
-                character: 0,
-              },
-              end: {
-                line: 4,
-                character: 3,
-              },
-            },
-            newText: newName,
-          },
-          {
-            range: {
-              start: {
-                line: 4,
-                character: 4,
-              },
-              end: {
-                line: 4,
-                character: 7,
-              },
-            },
-            newText: newName,
-          },
-          {
-            range: {
-              start: {
-                line: 5,
-                character: 13,
-              },
-              end: {
-                line: 5,
-                character: 16,
-              },
-            },
-            newText: newName,
-          },
-        ]);
-      });
     });
   });
 

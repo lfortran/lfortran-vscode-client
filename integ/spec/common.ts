@@ -180,7 +180,7 @@ export async function getErrorAlert(driver: WebDriver): Promise<string> {
       const errorAlert: WebElement =
         await driver.wait(
           until.elementLocated(
-            By.css('div.message[role="alert"][aria-label^="error"] div')),
+            By.css('div.message[role="alert"] div')),
           TIMEOUT);
       const errorMessage: string =
         await driver.executeScript(

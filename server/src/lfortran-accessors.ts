@@ -299,6 +299,51 @@ export class LFortranCLIAccessor implements LFortranAccessor {
     return output;
   }
 
+  resolve(filename: string, flags: string[], resolved?: Map<string, string>): string {
+    const fnid: string = "resolve";
+    const start: number = performance.now();
+
+    let filePath: string = filename;
+
+    if (!fs.existsSync(filePath)) {
+      let resolution: string | undefined = resolved?.get(filePath);
+      if (resolution === undefined) {
+        for (const flag of flags) {
+          if (flag.startsWith("-I")) {
+            const includeDir = flag.substring(2);
+            resolution = path.join(includeDir, filename);
+            if (fs.existsSync(resolution)) {
+              resolution = fs.realpathSync(resolution);
+              resolved?.set(filename, resolution);
+              filePath = resolution;
+              break;
+            }
+          }
+        }
+      } else {
+        filePath = resolution;
+      }
+    }
+
+    if (!fs.existsSync(filePath)) {
+      this.logWarn("Failed to find file by URI: %s", filePath);
+    }
+
+    if (this.logger.isBenchmarkOrTraceEnabled()) {
+      this.logBenchmarkAndTrace(
+        fnid, start,
+        [
+          "filename", filename,
+          "flags", flags,
+          "resolved", resolved,
+        ],
+        filePath
+      );
+    }
+
+    return filePath;
+  }
+
   async showDocumentSymbols(uri: string,
                             text: string,
                             settings: LFortranSettings): Promise<SymbolInformation[]> {
@@ -324,30 +369,8 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       const resolved: Map<string, string> = new Map();
       for (let i = 0, k = symbols.length; i < k; i++) {
         const symbol: Record<string, any> = symbols[i];
-        let symbolPath: string = symbol.filename;
-
-        if (!fs.existsSync(symbolPath)) {
-          let resolution = resolved.get(symbolPath);
-          if (resolution === undefined) {
-            for (const flag of settings.compiler.flags) {
-              if (flag.startsWith("-I")) {
-                const includeDir = flag.substring(2);
-                resolution = path.join(includeDir, symbolPath);
-                if (fs.existsSync(resolution)) {
-                  resolved.set(symbolPath, resolution);
-                  break;
-                }
-              }
-            }
-          }
-          if (fs.existsSync(resolution as string)) {
-            symbolPath = resolution as string;
-          }
-        }
-
-        if (!fs.existsSync(symbolPath)) {
-          this.logWarn("Failed to find file by URI: %s", symbolPath);
-        }
+        const symbolPath: string =
+          this.resolve(symbol.filename, settings.compiler.flags, resolved);
 
         const location: Location = symbol.location;
         // location.uri = uri;
@@ -356,9 +379,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         const range: Range = location.range;
 
         const start: Position = range.start;
+        start.line--;
         start.character--;
 
         const end: Position = range.end;
+        end.line--;
         end.character--;
       }
     }
@@ -396,26 +421,31 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         "--continue-compilation"
       ];
       const stdout = await this.runCompiler(settings, flags, text, "[]");
-      const results = JSON.parse(stdout);
+      const results: Record<string, any>[] = JSON.parse(stdout);
       for (let i = 0, k = results.length; i < k; i++) {
-        const location = results[i].location;
-        if (location !== undefined) {
-          const range: Range = location.range;
+        const result: Record<string, any> = results[i];
+        const symbolPath: string =
+          this.resolve(result.filename, settings.compiler.flags);
 
-          const start: Position = range.start;
-          start.character--;
+        const location = result.location;
 
-          const end: Position = range.end;
-          end.character--;
+        const range: Range = location.range;
 
-          definitions.push({
-            targetUri: uri,
-            targetRange: range,
-            targetSelectionRange: range
-          });
+        const start: Position = range.start;
+        start.line--;
+        start.character--;
 
-          break;
-        }
+        const end: Position = range.end;
+        end.line--;
+        end.character--;
+
+        definitions.push({
+          targetUri: symbolPath,
+          targetRange: range,
+          targetSelectionRange: range
+        });
+
+        break;
       }
     } catch (error: any) {
       this.logError(
