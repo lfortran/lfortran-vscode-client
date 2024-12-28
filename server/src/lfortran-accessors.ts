@@ -329,6 +329,10 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       this.logWarn("Failed to find file by URI: %s", filePath);
     }
 
+    // if file name is `b.f90` then it will be replaced with `$(pwd)/b.f90`
+    // if file name is `a/b.f90` then it will be replaced with `$(pwd)/a/b.f90`
+
+    const newFilePath: string = path.resolve(filePath);
     if (this.logger.isBenchmarkOrTraceEnabled()) {
       this.logBenchmarkAndTrace(
         fnid, start,
@@ -337,11 +341,11 @@ export class LFortranCLIAccessor implements LFortranAccessor {
           "flags", flags,
           "resolved", resolved,
         ],
-        filePath
+        newFilePath
       );
     }
 
-    return filePath;
+    return newFilePath;
   }
 
   async showDocumentSymbols(uri: string,
@@ -424,7 +428,7 @@ export class LFortranCLIAccessor implements LFortranAccessor {
       const results: Record<string, any>[] = JSON.parse(stdout);
       for (let i = 0, k = results.length; i < k; i++) {
         const result: Record<string, any> = results[i];
-        const symbolPath: string =
+        let symbolPath: string =
           this.resolve(result.filename, settings.compiler.flags);
 
         const location = result.location;
@@ -439,6 +443,9 @@ export class LFortranCLIAccessor implements LFortranAccessor {
         end.line--;
         end.character--;
 
+        if (symbolPath.endsWith(".tmp")) {
+          symbolPath = uri;
+        }
         definitions.push({
           targetUri: symbolPath,
           targetRange: range,
