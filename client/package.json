@@ -3,7 +3,7 @@
   "description": "LFortran LSP client.",
   "author": "LCompilers",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "publisher": "LCompilers",
   "repository": {
     "type": "git",
@@ -13,7 +13,9 @@
     "vscode": "^1.75.0"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "@types/which": "^3.0.4",
+    "vscode-languageclient": "^9.0.1",
+    "@vscode/python-extension": "1.0.5"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",

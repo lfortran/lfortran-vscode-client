@@ -1,39 +1,22 @@
-# Excluded everything by default
+# Blacklist everything by default
 *
 
 # Whitelist directories so file patterns may be included
 !*/
 
-# Include specific file patterns
+# Whitelist specific file patterns
 !/client/package.json
+!/client/package-lock.json
 !/client/src/*.ts
-!/client/testFixture/*.txt
-!/client/test/spec/**/*.ts
 !/client/tsconfig.json
-!/_config.yml
 !/esbuild.js
-!/eslint.config.mjs
-!/.github/workflows/*.yaml
-!/.github/workflows/*.yml
 !/.gitignore
-!/integ/issues/*.f90
-!/integ/spec/**/*.ts
-!/integ/tsconfig.json
-!/.mocharc.json
+!/LICENSE.txt
 !/package.json
+!/package-lock.json
 !/README.md
-!/scripts/*.sh
-!/server/package.json
-!/server/src/*.ts
-!/server/test/bin/*.ps1
-!/server/test/bin/*.sh
-!/server/test/spec/**/*.ts
-!/server/tsconfig.json
-!/settings.json
+!/server/setup.cfg
+!/server/setup.py
+!/server/src/lflsp/*.py
 !/tsconfig.json
 !/.vscodeignore
-
-# Exclude problematic file patterns
-/.test-extensions
-/lfortran
-/**/*.bak

@@ -1,92 +1,164 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------
+ * Original work Copyright (c) Microsoft Corporation. All rights reserved.
+ * Original work licensed under the MIT License.
+ * See ThirdPartyNotices.txt in the project root for license information.
+ * All modifications Copyright (c) Open Law Library. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http: // www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ----------------------------------------------------------------------- */
+"use strict";
 
-import 'source-map-support/register';
+import fs from 'fs';
 
-import * as path from 'path';
+import * as vscode from "vscode";
 
-import {
-  ExtensionContext,
-  commands,
-  workspace,
-} from 'vscode';
+import which from "which";
 
 import {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
-  TransportKind
-} from 'vscode-languageclient/node';
+  State,
+} from "vscode-languageclient/node";
 
 let client: LanguageClient;
+let clientStarting = false
+let logger: vscode.LogOutputChannel
 
-export function activate(context: ExtensionContext) {
-
-  // The server is implemented in node
-  const serverModule = context.asAbsolutePath(
-    path.join('out', 'server', 'src', 'main.js')
-  );
-
-  // The debug options for the server
-  // -----------------------------------------------------------------------
-  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can
-  //                 attach to the server for debugging
-  const debugOptions = {
-    execArgv: [
-      '--nolazy',
-      '--inspect=6009'
-    ]
-  };
-
-  // If the extension is launched in debug mode then the debug server options
-  // are used. Otherwise, the run options are used.
-  const serverOptions: ServerOptions = {
-    run: {
-      module: serverModule,
-      transport: TransportKind.ipc
-    },
-    debug: {
-      module: serverModule,
-      transport: TransportKind.ipc,
-      options: debugOptions
-    }
-  };
-
-  // Options to control the language client
-  const clientOptions: LanguageClientOptions = {
-    // Register the server for plain text documents
-    documentSelector: [{
-      scheme: 'file',
-      language: 'fortran'
-    }],
-    synchronize: {
-      // Notify the server about file changes to '.clientrc files contained in
-      // the workspace
-      fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
-    }
-  };
-
-  // Create the language client and start the client.
-  client = new LanguageClient(
-    'LFortranLanguageServer',
-    'LFortran Language Server',
-    serverOptions,
-    clientOptions
-  );
-
-  client.onRequest("LFortranLanguageServer.action.openIssueReporter", (...params: any[]) => {
-    commands.executeCommand("workbench.action.openIssueReporter", ...params);
+/**
+ * This is the main entry point.
+ * Called when vscode first activates the extension
+ */
+export async function activate(context: vscode.ExtensionContext) {
+  logger = vscode.window.createOutputChannel('LFortran Language Server', {
+    log: true
   });
 
-  // Start the client. This will also launch the server
-  client.start();
+  logger.info("Extension activated.");
+  await startLangServer();
 }
 
-export function deactivate(): Thenable<void> | undefined {
-  if (!client) {
-    return undefined;
+async function checkPathExistsAndIsExecutable(path: string): Promise<boolean> {
+  let pathExistsAndIsExecutable: boolean = false;
+
+  try {
+    const stats = await fs.promises.stat(path);
+    pathExistsAndIsExecutable = stats.isFile() && (stats.mode & 0o111) !== 0;
+  } catch (err: any) {
+    if (err.code !== 'ENOENT') {
+      throw err; // Other errors
+    }
   }
-  return client.stop();
+
+  return pathExistsAndIsExecutable;
+}
+
+async function getLFortranPath(): Promise<string | null | undefined> {
+  const compilerSettings =
+    vscode.workspace.getConfiguration("LFortranLanguageServer.compiler");
+  let lfortranPath = compilerSettings.get<string>("lfortranPath");
+  if (lfortranPath === "lfortran"
+    || !(await checkPathExistsAndIsExecutable(lfortranPath))) {
+    lfortranPath = await which("lfortran", { nothrow: true });
+  }
+  logger.info(`lfortranPath = ${lfortranPath}`);
+  return lfortranPath;
+}
+
+/**
+ * Start (or restart) the language server.
+ *
+ * @param command The executable to run
+ * @param args Arguments to pass to the executable
+ * @returns
+ */
+async function startLangServer() {
+
+  // Don't interfere if we are already in the process of launching the server.
+  if (clientStarting) {
+    logger.info("clientStarting, returning ...");
+    return;
+  }
+
+  clientStarting = true;
+  if (client) {
+    await stopLangServer();
+  }
+
+  const lfortranPath = await getLFortranPath();
+  if (!lfortranPath) {
+    logger.warn("lfortran command not found.");
+    clientStarting = false;
+    return;
+  }
+
+  const serverOptions: ServerOptions = {
+    command: "/home/dylon/Workspace/lcompilers/lfortran/src/bin/lfortran",
+    args: [
+      "server",
+    ],
+    options: {
+      env: process.env,
+    },
+  };
+
+  const clientOptions: LanguageClientOptions = {
+    documentSelector: [
+      {
+        scheme: "file",
+        language: "fortran"
+      },
+    ],
+    outputChannel: logger,
+    connectionOptions: {
+      maxRestartCount: 0 // don't restart on server failure.
+    },
+  };
+
+  client = new LanguageClient(
+    "LFortranLanguageServer",
+    "LFortran Language Server",
+    serverOptions,
+    clientOptions);
+
+  const promises = [client.start()]
+
+  const results = await Promise.allSettled(promises)
+  clientStarting = false
+
+  for (const result of results) {
+    if (result.status === "rejected") {
+      logger.error(`There was a error starting the server: ${result.reason}`)
+    }
+  }
+}
+
+export function deactivate(): Thenable<void> {
+  return stopLangServer();
+}
+
+async function stopLangServer(): Promise<void> {
+  logger.info("Stopping lang server ...");
+  if (!client) {
+    logger.info("No client to stop, returning...");
+    return
+  }
+
+  if (client.state === State.Running) {
+    await client.stop();
+    logger.info("Client stopped ...");
+  }
+
+  client.dispose()
+  client = undefined
 }

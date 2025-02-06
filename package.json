@@ -3,7 +3,7 @@
   "description": "LFortran language server protocol (LSP).",
   "author": "LCompilers",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/lfortran/lfortran-lsp"
@@ -19,7 +19,7 @@
   "activationEvents": [
     "onLanguage:fortran"
   ],
-  "main": "./out/client/src/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
@@ -122,47 +122,31 @@
     }
   },
   "scripts": {
-    "postinstall": "cd server && npm install && cd ../client && npm install && cd ..",
+    "postinstall": "cd client && npm install && cd ..",
     "compile": "npm run check-types && node esbuild.js",
     "check-types": "tsc --noEmit",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "vscode:prepublish": "npm run package",
-    "lint": "eslint ./server/src ./server/test/spec ./client/src ./integ/spec",
-    "test": "mocha server/test/spec/*.spec.ts",
-    "integ:transpile": "tsc -b ./integ",
-    "integ:test": "extest setup-and-run './out/integ/spec/**/*.spec.js' --code_version max --code_settings settings.json --extensions_dir .test-extensions",
-    "integ": "npm run integ:transpile && npm run integ:test",
+    "lint": "eslint ./client/src",
     "package": "npm run check-types && node esbuild.js --production"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.699.0",
     "@eslint/js": "^9.15.0",
-    "@types/chai": "^5.0.1",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^22.9.1",
-    "@types/sinon": "^17.0.3",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "@vscode/vsce": "^3.2.1",
-    "chai": "^5.1.2",
     "esbuild": "^0.24.0",
     "eslint": "^9.15.0",
-    "fast-check": "^3.23.1",
     "globals": "^15.12.0",
-    "mocha": "^11.0.1",
-    "sinon": "^19.0.2",
-    "ts-sinon": "^2.0.2",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.15.0",
-    "vscode-extension-tester": "^8.9.0"
+    "typescript-eslint": "^8.15.0"
   },
   "dependencies": {
-    "@types/shell-escape": "^0.2.3",
-    "@types/which": "^3.0.4",
-    "shell-escape": "^0.2.0",
     "source-map-support": "^0.5.21"
   }
 }
