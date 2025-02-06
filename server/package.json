@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dylon/lfortran-lsp"
+    "url": "https://github.com/lfortran/lfortran-lsp"
   },
   "dependencies": {
     "tmp": "^0.2.3",

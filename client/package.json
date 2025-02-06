@@ -7,7 +7,7 @@
   "publisher": "LCompilers",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dylon/lfortran-lsp"
+    "url": "https://github.com/lfortran/lfortran-lsp"
   },
   "engines": {
     "vscode": "^1.75.0"
