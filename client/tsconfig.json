@@ -1,19 +1,19 @@
 {
-	"compilerOptions": {
-		"module": "es2020",
-		"target": "es2020",
-		"lib": [
+  "compilerOptions": {
+    "module": "es2020",
+    "target": "es2020",
+    "lib": [
       "es2020"
     ],
-		"moduleResolution": "bundler",
-		"outDir": "../out/client/src",
-		"rootDir": "src",
-		"sourceMap": true
-	},
-	"include": [
+    "moduleResolution": "bundler",
+    "outDir": "../out/client/src",
+    "rootDir": "src",
+    "sourceMap": true
+  },
+  "include": [
     "src"
   ],
-	"exclude": [
+  "exclude": [
     "node_modules"
   ]
 }

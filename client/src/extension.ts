@@ -103,7 +103,7 @@ async function startLangServer() {
   }
 
   const serverOptions: ServerOptions = {
-    command: "/home/dylon/Workspace/lcompilers/lfortran/src/bin/lfortran",
+    command: lfortranPath,
     args: [
       "server",
     ],
