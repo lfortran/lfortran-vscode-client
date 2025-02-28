@@ -1,152 +1,146 @@
 {
-  "name": "lfortran-lsp",
-  "description": "LFortran language server protocol (LSP).",
-  "author": "LCompilers",
-  "license": "MIT",
-  "version": "0.0.1",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/lfortran/lfortran-lsp"
-  },
-  "publisher": "LCompilers",
-  "categories": [],
-  "keywords": [
-    "multi-root ready"
-  ],
-  "engines": {
-    "vscode": "^1.63.0"
-  },
-  "activationEvents": [
-    "onLanguage:fortran"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "languages": [
-      {
-        "id": "fortran",
-        "aliases": [
-          "lfortran"
-        ],
-        "extensions": [
-          ".f",
-          ".for",
-          ".f90",
-          ".f95",
-          ".f03"
-        ]
-      }
+    "name": "lfortran-lsp",
+    "description": "LFortran language server protocol (LSP).",
+    "author": "LCompilers",
+    "license": "MIT",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/lfortran/lfortran-lsp"
+    },
+    "publisher": "LCompilers",
+    "categories": [],
+    "keywords": [
+        "multi-root ready"
     ],
-    "configuration": {
-      "type": "object",
-      "title": "LFortran Language Server",
-      "properties": {
-        "LFortranLanguageServer.openIssueReporterOnError": {
-          "scope": "resource",
-          "type": "boolean",
-          "default": false,
-          "description": "Open the issue reporter to submit a generated bug report when an internal error is detected."
-        },
-        "LFortranLanguageServer.maxNumberOfProblems": {
-          "scope": "resource",
-          "type": "number",
-          "default": 100,
-          "description": "Controls the maximum number of problems produced by the server."
-        },
-        "LFortranLanguageServer.trace.server": {
-          "scope": "window",
-          "type": "string",
-          "enum": [
-            "off",
-            "messages",
-            "verbose"
-          ],
-          "default": "off",
-          "description": "Traces the communication between VS Code and the language server."
-        },
-        "LFortranLanguageServer.compiler.lfortranPath": {
-          "scope": "resource",
-          "type": "string",
-          "default": "lfortran",
-          "description": "The path to the LFortran compiler executable."
-        },
-        "LFortranLanguageServer.compiler.flags": {
-          "scope": "resource",
-          "type": "array",
-          "item": {
-            "type": "string"
-          },
-          "default": [],
-          "description": "Additional flags to pass to the LFortran compiler."
-        },
-        "LFortranLanguageServer.log.level": {
-          "scope": "resource",
-          "type": "string",
-          "enum": [
-            "off",
-            "fatal",
-            "error",
-            "warn",
-            "info",
-            "debug",
-            "trace",
-            "all"
-          ],
-          "default": "info",
-          "description": "Lowest level of logs to include in the extension's console output."
-        },
-        "LFortranLanguageServer.log.benchmark": {
-          "scope": "resource",
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to benchmark event handlers and related operations."
-        },
-        "LFortranLanguageServer.log.filter": {
-          "scope": "resource",
-          "type": "string",
-          "default": "",
-          "description": "Regular expression for filtering log messages."
-        },
-        "LFortranLanguageServer.log.prettyPrint": {
-          "scope": "resource",
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to pretty-print JSON objects and arrays."
-        },
-        "LFortranLanguageServer.log.indentSize": {
-          "scope": "resource",
-          "type": "number",
-          "default": 2,
-          "description": "Number of spaces to indent the pretty-printed JSON."
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "activationEvents": [
+        "onLanguage:fortran"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "fortran",
+                "aliases": [
+                    "lfortran"
+                ],
+                "extensions": [
+                    ".f",
+                    ".for",
+                    ".f90",
+                    ".f95",
+                    ".f03"
+                ]
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "LFortran Language Server",
+            "properties": {
+                "LFortranLanguageServer.openIssueReporterOnError": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Open a bug report if an internal error occurs."
+                },
+                "LFortranLanguageServer.maxNumberOfProblems": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 100,
+                    "description": "Maximum number of errors and warnings to report."
+                },
+                "LFortranLanguageServer.trace.server": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between the language client and server."
+                },
+                "LFortranLanguageServer.compiler.path": {
+                    "scope": "window",
+                    "type": "string",
+                    "default": "lfortran",
+                    "description": "Path to the LFortran compiler executable."
+                },
+                "LFortranLanguageServer.compiler.flags": {
+                    "scope": "resource",
+                    "type": "array",
+                    "item": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Additional flags to pass to the LFortran compiler."
+                },
+                "LFortranLanguageServer.log.path": {
+                    "scope": "window",
+                    "type": "string",
+                    "default": "lfortran-language-server.log",
+                    "description": "Where the log file should be written."
+                },
+                "LFortranLanguageServer.log.level": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "fatal",
+                        "error",
+                        "warn",
+                        "info",
+                        "debug",
+                        "trace",
+                        "all"
+                    ],
+                    "default": "info",
+                    "description": "Lowest level of logs to include in the extension's console output."
+                },
+                "LFortranLanguageServer.log.prettyPrint": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to pretty-print JSON objects and arrays."
+                },
+                "LFortranLanguageServer.log.indentSize": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 4,
+                    "description": "Number of spaces to indent the pretty-printed JSON."
+                }
+            }
         }
-      }
+    },
+    "scripts": {
+        "postinstall": "cd client && npm install && cd ..",
+        "compile": "npm run check-types && node esbuild.js",
+        "check-types": "tsc --noEmit",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "vscode:prepublish": "npm run package",
+        "lint": "eslint ./client/src",
+        "package": "npm run check-types && node esbuild.js --production"
+    },
+    "devDependencies": {
+        "@aws-sdk/client-s3": "^3.699.0",
+        "@eslint/js": "^9.15.0",
+        "@types/node": "^22.9.1",
+        "@typescript-eslint/eslint-plugin": "^8.15.0",
+        "@typescript-eslint/parser": "^8.15.0",
+        "@vscode/vsce": "^3.2.1",
+        "esbuild": "^0.24.0",
+        "eslint": "^9.15.0",
+        "globals": "^15.12.0",
+        "tsx": "^4.19.2",
+        "typescript": "^5.6.3",
+        "typescript-eslint": "^8.15.0"
+    },
+    "dependencies": {
+        "source-map-support": "^0.5.21"
     }
-  },
-  "scripts": {
-    "postinstall": "cd client && npm install && cd ..",
-    "compile": "npm run check-types && node esbuild.js",
-    "check-types": "tsc --noEmit",
-    "watch": "npm-run-all -p watch:*",
-    "watch:esbuild": "node esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "vscode:prepublish": "npm run package",
-    "lint": "eslint ./client/src",
-    "package": "npm run check-types && node esbuild.js --production"
-  },
-  "devDependencies": {
-    "@aws-sdk/client-s3": "^3.699.0",
-    "@eslint/js": "^9.15.0",
-    "@types/node": "^22.9.1",
-    "@typescript-eslint/eslint-plugin": "^8.15.0",
-    "@typescript-eslint/parser": "^8.15.0",
-    "@vscode/vsce": "^3.2.1",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.15.0",
-    "globals": "^15.12.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.6.3",
-    "typescript-eslint": "^8.15.0"
-  },
-  "dependencies": {
-    "source-map-support": "^0.5.21"
-  }
 }

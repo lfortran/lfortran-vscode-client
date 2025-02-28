@@ -3,7 +3,7 @@ import * as esbuild from 'esbuild';
 const watch = process.argv.includes('--watch');
 
 let production = process.argv.includes('--production');
-if (process.env.FORTLS_LFORTRAN_MODE === "debug") {
+if (process.env.LFORTRAN_LSP_MODE === "debug") {
   production = false;
 }
 
