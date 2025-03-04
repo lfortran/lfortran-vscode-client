@@ -21,3 +21,4 @@ versions.txt
 out/integ
 lfortran
 lfortran.bak
+*.log
