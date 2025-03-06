@@ -45,7 +45,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     logger.info("Extension activated.");
-    await startLangServer();
+    await startLangServer(context);
 }
 
 async function checkPathExistsAndIsExecutable(path: string): Promise<boolean> {
@@ -84,7 +84,7 @@ async function getLFortranPath(config: vscode.WorkspaceConfiguration): Promise<s
  * @param args Arguments to pass to the executable
  * @returns
  */
-async function startLangServer() {
+async function startLangServer(context: vscode.ExtensionContext) {
 
     // Don't interfere if we are already in the process of launching the server.
     if (clientStarting) {
@@ -119,6 +119,7 @@ async function startLangServer() {
         "--log-level", config.get<string>("log.level"),
         "--log-pretty-print", prettyPrint.toString(),
         "--log-indent-size", indentSize.toString(10),
+        "--extension-id", context.extension.id,
     ];
 
     const compilerFlags = config.get<string[]>("compiler.flags");
@@ -160,7 +161,15 @@ async function startLangServer() {
         "LFortranLanguageServer",
         "LFortran Language Server",
         serverOptions,
-        clientOptions);
+        clientOptions
+    );
+
+    client.onNotification("$/openIssue", (...params: any[]) => {
+        vscode.commands.executeCommand(
+            "workbench.action.openIssueReporter",
+            ...params
+        );
+    });
 
     const promises = [client.start()]
 
