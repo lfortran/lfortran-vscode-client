@@ -68,7 +68,7 @@ async function getConfig(): Promise<vscode.WorkspaceConfiguration> {
 }
 
 async function getLFortranPath(config: vscode.WorkspaceConfiguration): Promise<string | null | undefined> {
-    let lfortranPath = config.get<string>("compiler.lfortranPath");
+    let lfortranPath = config.get<string>("compiler.path");
     if (lfortranPath === "lfortran"
         || !(await checkPathExistsAndIsExecutable(lfortranPath))) {
         lfortranPath = await which("lfortran", { nothrow: true });
