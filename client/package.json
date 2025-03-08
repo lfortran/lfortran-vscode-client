@@ -1,13 +1,13 @@
 {
-  "name": "lfortran-lsp-client",
-  "description": "LFortran LSP client.",
+  "name": "lfortran-vscode-client",
+  "description": "LFortran language client for VSCode.",
   "author": "LCompilers",
   "license": "MIT",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "publisher": "LCompilers",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lfortran/lfortran-lsp"
+    "url": "https://github.com/lfortran/lfortran-vscode-client"
   },
   "engines": {
     "vscode": "^1.75.0"

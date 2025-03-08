@@ -11,6 +11,7 @@
 !/client/tsconfig.json
 !/esbuild.js
 !/.gitignore
+!/images/**/*.png
 !/LICENSE.txt
 !/package.json
 !/package-lock.json
