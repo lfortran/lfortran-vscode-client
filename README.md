@@ -9,7 +9,7 @@ Before you install this extension, please be sure to install `lfortran` per [the
 installation instructions](https://docs.lfortran.org/en/installation/). Unless
 you intend to develop `lfortran`, it is recommended to install it with Conda.
 
-![Installing LFortran with Conda](https://lfortran.github.io/lfortran-lsp/videos/lfortran-vscode-client/installing-lfortran-with-conda.gif)
+![Installing LFortran with Conda](https://lfortran.github.io/lfortran-vscode-client/videos/lfortran-vscode-client/installing-lfortran-with-conda.gif)
 
 Once you have installed `lfortran`, it is recommended to install this extension
 via [the VSCode
@@ -59,21 +59,21 @@ LFortran will automatically check a document for syntactic and semantic errors
 and warn about potential issues. Errors will be highlighted and described in the
 `Problems` terminal (`View -> Problems`).
 
-![Installing LFortran with Conda](https://lfortran.github.io/lfortran-lsp/videos/lfortran-vscode-client/document-validation.gif)
+![Installing LFortran with Conda](https://lfortran.github.io/lfortran-vscode-client/videos/lfortran-vscode-client/document-validation.gif)
 
 ### Goto Definitions
 
 To jump to a symbol's definition, either place the cursor over it and press
 `F12` or right-click it and select `Go to Definition` from the context menu.
 
-![Installing LFortran with Conda](https://lfortran.github.io/lfortran-lsp/videos/lfortran-vscode-client/goto-definition.gif)
+![Installing LFortran with Conda](https://lfortran.github.io/lfortran-vscode-client/videos/lfortran-vscode-client/goto-definition.gif)
 
 ### Hover Previews
 
 When the cursor hovers over a symbol, a preview of its definition will be placed
 next to it.
 
-![Installing LFortran with Conda](https://lfortran.github.io/lfortran-lsp/videos/lfortran-vscode-client/hover-previews.gif)
+![Installing LFortran with Conda](https://lfortran.github.io/lfortran-vscode-client/videos/lfortran-vscode-client/hover-previews.gif)
 
 ### Configuration
 
@@ -82,7 +82,7 @@ clicking the gear icon on the bottom-right of the `LFortran` list item, and
 lastly by clicking the `Settings` menu item. Most of the settings are common to
 all workspaces but the compiler flags may be modified at the resource level.
 
-![Installing LFortran with Conda](https://lfortran.github.io/lfortran-lsp/videos/lfortran-vscode-client/configuration.gif)
+![Installing LFortran with Conda](https://lfortran.github.io/lfortran-vscode-client/videos/lfortran-vscode-client/configuration.gif)
 
 ## Debugging
 
@@ -101,4 +101,4 @@ If you would like to debug the extension, please do the following:
    file named `lfortran-language-server.log` that is located relative to the
    root of your workspace.
 
-![Installing LFortran with Conda](https://lfortran.github.io/lfortran-lsp/videos/lfortran-vscode-client/debugging.gif)
+![Installing LFortran with Conda](https://lfortran.github.io/lfortran-vscode-client/videos/lfortran-vscode-client/debugging.gif)
