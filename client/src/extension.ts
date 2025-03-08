@@ -35,12 +35,8 @@ let client: LanguageClient;
 let clientStarting = false
 let logger: vscode.LogOutputChannel
 
-/**
- * This is the main entry point.
- * Called when vscode first activates the extension
- */
 export async function activate(context: vscode.ExtensionContext) {
-    logger = vscode.window.createOutputChannel('LFortran Language Server', {
+    logger = vscode.window.createOutputChannel('LFortran', {
         log: true
     });
 
@@ -64,7 +60,7 @@ async function checkPathExistsAndIsExecutable(path: string): Promise<boolean> {
 }
 
 async function getConfig(): Promise<vscode.WorkspaceConfiguration> {
-    return vscode.workspace.getConfiguration("LFortranLanguageServer");
+    return vscode.workspace.getConfiguration("LFortran");
 }
 
 async function getLFortranPath(config: vscode.WorkspaceConfiguration): Promise<string | null | undefined> {
@@ -106,19 +102,18 @@ async function startLangServer(context: vscode.ExtensionContext) {
     }
 
     const prettyPrint: boolean = config.get<boolean>("log.prettyPrint");
-    const indentSize: number = config.get<number>("log.indentSize");
+    const indentSize: number = config.get<number>("indentSize");
 
     const serverArgs: string[] = [
         "server",
         "--open-issue-reporter-on-error", config.get<boolean>("openIssueReporterOnError").toString(),
         "--max-number-of-problems", config.get<number>("maxNumberOfProblems").toString(10),
         "--trace-server", config.get<string>("trace.server"),
-        // "--compiler-path", config.get<string>("compiler.path"),
         "--compiler-path", lfortranPath,
         "--log-path", config.get<string>("log.path"),
         "--log-level", config.get<string>("log.level"),
         "--log-pretty-print", prettyPrint.toString(),
-        "--log-indent-size", indentSize.toString(10),
+        "--indent-size", indentSize.toString(10),
         "--extension-id", context.extension.id,
     ];
 
@@ -158,8 +153,8 @@ async function startLangServer(context: vscode.ExtensionContext) {
     };
 
     client = new LanguageClient(
-        "LFortranLanguageServer",
-        "LFortran Language Server",
+        "LFortran",
+        "LFortran",
         serverOptions,
         clientOptions
     );

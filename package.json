@@ -1,12 +1,13 @@
 {
-    "name": "lfortran-lsp",
-    "description": "LFortran language server protocol (LSP).",
+    "name": "LFortran",
+    "description": "VSCode extension for the LFortran language server.",
+    "icon": "https://lfortran.github.io/lfortran-lsp/images/lfortran-vscode-client/lfortran.png",
     "author": "LCompilers",
     "license": "MIT",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lfortran/lfortran-lsp"
+        "url": "https://github.com/lfortran/lfortran-vscode-client"
     },
     "publisher": "LCompilers",
     "categories": [],
@@ -38,21 +39,21 @@
         ],
         "configuration": {
             "type": "object",
-            "title": "LFortran Language Server",
+            "title": "LFortran",
             "properties": {
-                "LFortranLanguageServer.openIssueReporterOnError": {
+                "LFortran.openIssueReporterOnError": {
                     "scope": "window",
                     "type": "boolean",
                     "default": false,
                     "description": "Open a bug report if an internal error occurs."
                 },
-                "LFortranLanguageServer.maxNumberOfProblems": {
+                "LFortran.maxNumberOfProblems": {
                     "scope": "window",
                     "type": "number",
                     "default": 100,
                     "description": "Maximum number of errors and warnings to report."
                 },
-                "LFortranLanguageServer.trace.server": {
+                "LFortran.trace.server": {
                     "scope": "window",
                     "type": "string",
                     "enum": [
@@ -63,13 +64,13 @@
                     "default": "off",
                     "description": "Traces the communication between the language client and server."
                 },
-                "LFortranLanguageServer.compiler.path": {
+                "LFortran.compiler.path": {
                     "scope": "window",
                     "type": "string",
                     "default": "lfortran",
                     "description": "Path to the LFortran compiler executable."
                 },
-                "LFortranLanguageServer.compiler.flags": {
+                "LFortran.compiler.flags": {
                     "scope": "resource",
                     "type": "array",
                     "item": {
@@ -78,13 +79,13 @@
                     "default": [],
                     "description": "Additional flags to pass to the LFortran compiler."
                 },
-                "LFortranLanguageServer.log.path": {
+                "LFortran.log.path": {
                     "scope": "window",
                     "type": "string",
                     "default": "lfortran-language-server.log",
                     "description": "Where the log file should be written."
                 },
-                "LFortranLanguageServer.log.level": {
+                "LFortran.log.level": {
                     "scope": "window",
                     "type": "string",
                     "enum": [
@@ -100,17 +101,17 @@
                     "default": "info",
                     "description": "Lowest level of logs to include in the extension's console output."
                 },
-                "LFortranLanguageServer.log.prettyPrint": {
+                "LFortran.log.prettyPrint": {
                     "scope": "window",
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to pretty-print JSON objects and arrays."
                 },
-                "LFortranLanguageServer.log.indentSize": {
+                "LFortran.indentSize": {
                     "scope": "window",
                     "type": "number",
                     "default": 4,
-                    "description": "Number of spaces to indent the pretty-printed JSON."
+                    "description": "Number of spaces for each level of indentation."
                 }
             }
         }
