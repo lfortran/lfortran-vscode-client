@@ -7,6 +7,6 @@
 # Include specific file patterns
 !/_config.yml
 !/.gitignore
-!/images/*.png
+!/images/**/*.png
 !/README.md
-!/videos/*.gif
+!/videos/**/*.gif
