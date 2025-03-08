@@ -1,7 +1,7 @@
 {
     "name": "LFortran",
     "description": "VSCode extension for the LFortran language server.",
-    "icon": "https://lfortran.github.io/lfortran-lsp/images/lfortran-vscode-client/lfortran.png",
+    "icon": "images/lfortran.png",
     "author": "LCompilers",
     "license": "MIT",
     "version": "0.0.4",
