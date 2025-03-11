@@ -114,6 +114,10 @@ async function startLangServer(context: vscode.ExtensionContext) {
         "--log-level", config.get<string>("log.level"),
         "--log-pretty-print", prettyPrint.toString(),
         "--indent-size", indentSize.toString(10),
+        "--timeout-ms", config.get<number>("timeoutMs").toString(),
+        "--max-retry-attempts", config.get<number>("retry.maxAttempts").toString(),
+        "--min-retry-sleep-time-ms", config.get<number>("retry.minSleepTimeMs").toString(),
+        "--max-retry-sleep-time-ms", config.get<number>("retry.maxSleepTimeMs").toString(),
         "--extension-id", context.extension.id,
     ];
 

@@ -112,6 +112,30 @@
                     "type": "number",
                     "default": 4,
                     "description": "Number of spaces for each level of indentation."
+                },
+                "LFortran.timeoutMs": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 100,
+                    "description": "Number of milliseconds to await requests from server-to-client."
+                },
+                "LFortran.retry.maxAttempts": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 3,
+                    "description": "Maximum number of times to attempt a request before giving up."
+                },
+                "LFortran.retry.minSleepTimeMs": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 10,
+                    "description": "Minimum number of milliseconds to wait between request attempts."
+                },
+                "LFortran.retry.maxSleepTimeMs": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 300,
+                    "description": "Maximum number of milliseconds to wait between request attempts."
                 }
             }
         }
