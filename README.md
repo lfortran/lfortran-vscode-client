@@ -15,6 +15,36 @@ Once you have installed `lfortran`, it is recommended to install this extension
 via [the VSCode
 Marketplace](https://marketplace.visualstudio.com/items?itemName=LCompilers.LFortran).
 
+## Version Compatibility with LFortran
+
+There are two independent constraints.
+
+First constraint is that for a given version of `lfortran-vscode-client` in the
+left column, you need at least the version of `LFortran` in the right column:
+
+| lfortran-vscode-client | LFortran  |
+| ---------------------- | --------- |
+| 0.0.4                  | >= 0.50.0 |
+| 0.0.5                  | >= 0.51.0 |
+
+The second constraint is that for a given version of `LFortran` in the left
+column, you need at least the version of `lfortran-vscode-client` in the right
+column:
+
+| LFortran | lfortran-vscode-client |
+| -------- | ---------------------- |
+| 0.50.0   | >= 0.0.4               |
+| 0.51.0   | >= 0.0.4               |
+
+When `lfortran-vscode-client` introduces a change the requires some feature in
+`LFortran`, we bump the `LFortran` version in the first table. When `LFortran`
+adds a change that requires some feature in the `lfortran-vscode-client`, then
+we bump the `lfortran-vscode-client` verison in the second table. When a new
+version of `lfortran-vscode-client` is released, only the first table has to be
+updated. When a new version of `LFortran` is released, only the second table
+needs to be updated.
+
+
 ### Building from source
 
 If you would like to build this extension from source, please install `lfortran`
