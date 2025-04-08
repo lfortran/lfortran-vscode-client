@@ -132,3 +132,17 @@ If you would like to debug the extension, please do the following:
    root of your workspace.
 
 ![Installing LFortran with Conda](https://lfortran.github.io/lfortran-vscode-client/videos/lfortran-vscode-client/debugging.gif)
+
+
+## Releasing a New Version
+
+1. Update a new version in `package.json`, build the extension locally (see
+   above) and test it in VSCode. Push all changes to main.
+2. Go to https://github.com/lfortran/lfortran-vscode-client/releases, click on
+   "Draft a new release", "Choose a tag", enter a new version (e.g., `v0.0.5`),
+   click on "Generate release notes".
+3. Manually attach the new `*.vsix` file to the release, and "Publish release"
+4. Log into https://marketplace.visualstudio.com/manage/publishers/lcompilers
+5. Find the "LFortran" line and click on the "..." menu (that has a hint "More
+   Actions..."), select "Update", and upload the same `*.vsix` as above, click
+   "Upload".
