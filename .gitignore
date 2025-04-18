@@ -12,6 +12,7 @@
 !/esbuild.js
 !/.gitignore
 !/images/**/*.png
+!/language-configuration.json
 !/LICENSE.txt
 !/package.json
 !/package-lock.json

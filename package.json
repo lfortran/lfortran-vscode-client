@@ -34,7 +34,8 @@
                     ".f90",
                     ".f95",
                     ".f03"
-                ]
+                ],
+                "configuration": "./language-configuration.json"
             }
         ],
         "configuration": {
