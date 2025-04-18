@@ -26,6 +26,7 @@ left column, you need at least the version of `LFortran` in the right column:
 | ---------------------- | --------- |
 | 0.0.4                  | >= 0.50.0 |
 | 0.0.5                  | >= 0.51.0 |
+| 0.0.6                  | >= 0.52.0 |
 
 The second constraint is that for a given version of `LFortran` in the left
 column, you need at least the version of `lfortran-vscode-client` in the right
@@ -34,7 +35,8 @@ column:
 | LFortran | lfortran-vscode-client |
 | -------- | ---------------------- |
 | 0.50.0   | >= 0.0.4               |
-| 0.51.0   | >= 0.0.4               |
+| 0.51.0   | >= 0.0.5               |
+| 0.52.0   | >= 0.0.6               |
 
 When `lfortran-vscode-client` introduces a change the requires some feature in
 `LFortran`, we bump the `LFortran` version in the first table. When `LFortran`
@@ -139,7 +141,7 @@ If you would like to debug the extension, please do the following:
 1. Update a new version in `package.json`, build the extension locally (see
    above) and test it in VSCode. Push all changes to main.
 2. Go to https://github.com/lfortran/lfortran-vscode-client/releases, click on
-   "Draft a new release", "Choose a tag", enter a new version (e.g., `v0.0.5`),
+   "Draft a new release", "Choose a tag", enter a new version (e.g., `v0.0.6`),
    click on "Generate release notes".
 3. Manually attach the new `*.vsix` file to the release, and "Publish release"
 4. Log into https://marketplace.visualstudio.com/manage/publishers/lcompilers

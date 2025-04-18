@@ -120,6 +120,8 @@ async function startLangServer(context: vscode.ExtensionContext) {
         "--max-retry-sleep-time-ms", config.get<number>("retry.maxSleepTimeMs").toString(),
         "--extension-id", context.extension.id,
         "--execution-strategy", config.get<string>("execution.strategy"),
+        "--telemetry-enabled", config.get<boolean>("telemetry.enabled").toString(),
+        "--telemetry-frequency-ms", config.get<number>("telemetry.frequencyMs").toString(),
     ];
 
     const compilerFlags = config.get<string[]>("compiler.flags");

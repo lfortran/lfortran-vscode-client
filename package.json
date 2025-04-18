@@ -4,7 +4,7 @@
     "icon": "images/lfortran.png",
     "author": "LCompilers",
     "license": "MIT",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "repository": {
         "type": "git",
         "url": "https://github.com/lfortran/lfortran-vscode-client"
@@ -146,6 +146,18 @@
                     ],
                     "default": "concurrent",
                     "description": "Whether to handle requests concurrently (single-threaded) or in parallel (multi-threaded). Changes to this setting may require a restart."
+                },
+                "LFortran.telemetry.enabled": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to enable telemetry events (may require a restart)."
+                },
+                "LFortran.telemetry.frequencyMs": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 1000,
+                    "description": "Number of milliseconds to wait between telemetry events."
                 }
             }
         }
